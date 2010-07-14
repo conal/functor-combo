@@ -42,36 +42,10 @@ instance Regular [a] where
 -- 
 --   data Tree  a = Node a [Tree a]
 
+-- instance Functor Tree where
+--   fmap f (Node a ts) = Node (f a) (fmap f ts)
+
 instance Regular (Tree a) where
   type FunctorOf (Tree a) = Const a :*: []
   unwrap (Node a ts) = Const a :*: ts
   wrap (Const a :*: ts) = Node a ts
-
-
--- instance Functor Tree where
---   fmap f (Node a ts) = Node (f a) (fmap f ts)
-
--- Try defining more generally:
--- 
--- instance Functor Tree where
---   fmap f = wrap . (fmap.fmap) f . unwrap
-
-{-
-f :: a -> b
-
-t :: Tree a
-
-unwrap t :: FunctorOf (Tree a) (Tree a)
-
-(fmap.fmap) f (unwrap t) :: FunctorOf (Tree a) (Tree b)
-
-wrap ((fmap.fmap) f (unwrap t)) :: oops
-
-I need a variation on fmap.  Maybe
-
-   fmap' :: (a -> b) -> FunctorOf (h a) (h a) -> FunctorOf (h b) (h b)
-
-I think PolyP dealt with this issue via something like Bifunctor and
-used Par and Rec.
-
--}
