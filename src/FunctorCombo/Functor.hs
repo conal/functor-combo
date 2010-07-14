@@ -14,7 +14,7 @@
 
 module FunctorCombo.Functor
   (
-    Const,Void,Unit,Id(..),inId,inId2,(:+:)(..),(:*:)(..),(:.)(..),inO,inO2,(~>)
+    Const(..),Void,Unit,Id(..),inId,inId2,(:+:)(..),(:*:)(..),(:.)(..),inO,inO2,(~>)
   ) where
 
 
