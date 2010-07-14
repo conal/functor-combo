@@ -1,7 +1,7 @@
 Name:                functor-combo
 Version:             0.0.0
 Cabal-Version:       >= 1.2
-Synopsis:            
+Synopsis:            Functor combinators with tries & zippers
 Category:            Data
 Description:
   Simple functor combinators, their derivatives, and their use for tries
@@ -27,7 +27,7 @@ Package-Url:         http://code.haskell.org/~conal/code/functor-combo
 Library
   hs-Source-Dirs:      src
   Extensions:
-  Build-Depends:       base<5, TypeCompose, containers
+  Build-Depends:       base<5, TypeCompose, containers, data-inttrie
   Exposed-Modules:     
                        FunctorCombo.Functor
                        FunctorCombo.Derivative
@@ -35,6 +35,7 @@ Library
                        FunctorCombo.FixC
                        FunctorCombo.Regular
                        FunctorCombo.LocT
+                       FunctorCombo.MemoTrie
   ghc-options:         -Wall
 
 --  ghc-prof-options:    -prof -auto-all 

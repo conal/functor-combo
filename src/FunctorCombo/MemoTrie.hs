@@ -5,7 +5,7 @@
 -- |
 -- Module      :  FunctorCombo.MemoTrie
 -- Copyright   :  (c) Conal Elliott 2010
--- License     :  GPL-3
+-- License     :  BSD3
 -- 
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
