@@ -12,12 +12,7 @@
 -- Regular data types
 ----------------------------------------------------------------------
 
-module FunctorCombo.Regular
-  (
-    Regular(..)
-  ) where
-
-import Control.Applicative ((<$>))
+module FunctorCombo.Regular (Regular(..)) where
 
 import Data.Tree
 
@@ -48,13 +43,13 @@ instance Regular [a] where
 --   data Tree  a = Node a [Tree a]
 
 instance Regular (Tree a) where
-  type FunctorOf (Tree a) = Const a :*: ([] :. Id)
-  unwrap (Node a ts) = Const a :*: O (Id <$> ts)
-  wrap (Const a :*: O (idTs)) = Node a (unId <$> idTs)
+  type FunctorOf (Tree a) = Const a :*: []
+  unwrap (Node a ts) = Const a :*: ts
+  wrap (Const a :*: ts) = Node a ts
 
 
 -- instance Functor Tree where
---   fmap f (Node a ts) = Node (f a) ((fmap.fmap) f ts)
+--   fmap f (Node a ts) = Node (f a) (fmap f ts)
 
 -- Try defining more generally:
 -- 

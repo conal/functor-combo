@@ -31,10 +31,10 @@ Library
   Exposed-Modules:     
                        FunctorCombo.Functor
                        FunctorCombo.Derivative
-                       FunctorCombo.FixC
                        FunctorCombo.Holey
-                       FunctorCombo.LocT
+                       FunctorCombo.FixC
                        FunctorCombo.Regular
+                       FunctorCombo.LocT
   ghc-options:         -Wall
 
 --  ghc-prof-options:    -prof -auto-all 
