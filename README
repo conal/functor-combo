@@ -1,0 +1,11 @@
+project-foo [1] is a template for a package, to make it easy to copy &
+modify.  It uses cabal-make [2] for convenience.  It's even equipped with
+a darcs repo.  Copy the directory ("cp -rp"), "darcs mv" and edit the
+.cabal file, edit README and wikipage.tw, and "rm _darcs/prefs/*repo*".
+Then add new content with "make check-add" and "make add-new".  "darcs
+record" the changes.  When ready, do a "darcs put" or "make repo".
+
+References:
+
+[1] http://haskell.org/haskellwiki/project-foo
+
