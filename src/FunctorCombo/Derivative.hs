@@ -12,10 +12,7 @@
 -- Derivatives (one-hole contexts) for standard Functor combinators
 ----------------------------------------------------------------------
 
-module FunctorCombo.Derivative
-  (
-    Der, Loc
-  ) where
+module FunctorCombo.Derivative (Der) where
 
 import FunctorCombo.Functor
 
@@ -35,8 +32,4 @@ type instance Der (f :+: g) = Der f :+: Der g
 type instance Der (f :*: g) = Der f :*: g  :+:  f :*: Der g
 
 type instance Der (g :.  f) = Der g :. f  :*:  Der f
-
-
--- | Location, i.e., one-hole context and a value for the hole.
-type Loc f a = (Der f a, a)
 

@@ -32,6 +32,7 @@ Library
                        FunctorCombo.Functor
                        FunctorCombo.Derivative
                        FunctorCombo.Holey
+                       FunctorCombo.DHoley
                        FunctorCombo.FixC
                        FunctorCombo.Regular
                        FunctorCombo.LocT

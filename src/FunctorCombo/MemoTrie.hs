@@ -10,7 +10,7 @@
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
 -- 
--- Functor-based memo tries
+-- Functor-based memo tries (strict for now)
 ----------------------------------------------------------------------
 
 module FunctorCombo.MemoTrie
@@ -110,6 +110,25 @@ instance (HasTrie a, HasTrie b) => HasTrie (a , b) where
   enumerate (O tt) =
     [ ((a,b),x) | (a,t) <- enumerate tt , (b,x) <- enumerate t ]
 
+-- Experiment:
+
+fToPair :: (f:*:g) a -> (f a, g a)
+fToPair (fa :*: ga) = (fa,ga)
+
+pairToF :: (f a, g a) -> (f:*:g) a
+pairToF (fa,ga) = (fa :*: ga)
+
+#define HasTrieIsomorph(Context,Type,IsoType,fromIso,toIso) \
+instance Context => HasTrie (Type) where {\
+  type Trie (Type) = Trie (IsoType); \
+  trie f = trie (f . fromIso); \
+  untrie t = untrie t . toIso; \
+  enumerate = (result.fmap.first) fromIso enumerate; \
+}
+
+HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
+               , (f :*: g) a, (f a,g a), pairToF, fToPair)
+
 
 type BoolT = Either () ()
 
@@ -121,57 +140,10 @@ decodeBool :: BoolT -> Bool
 decodeBool (Left  ()) = False
 decodeBool (Right ()) = True
 
-instance HasTrie Bool where
-  -- This next line requires UndecidableInstances.
-  type Trie Bool = Trie (Either () ())
-  trie f   = trie (f . decodeBool)
-  untrie t = untrie t . encodeBool
-  -- enumerate :: (k :->: v) -> [(k,v)]
-  enumerate = (result.fmap.first) decodeBool enumerate
+HasTrieIsomorph((), Bool, BoolT, decodeBool, encodeBool)
 
-enumerateEnum :: (Enum k, Num k, HasTrie k) => (k :->: v) -> [(k,v)]
-enumerateEnum t = [(k, f k) | k <- [0 ..] `weave` [-1, -2 ..]]
- where
-   f = untrie t
-
-#define HasTrieIntegral(Type) \
-instance HasTrie Type where { \
-  type Trie Type = IT.IntTrie; \
-  trie   = (<$> IT.identity); \
-  untrie = IT.apply; \
-  enumerate = enumerateEnum; \
-}
-
-HasTrieIntegral(Int)
-HasTrieIntegral(Integer)
-
-{-
-instance HasTrie Int where
-  type Trie Int = IT.IntTrie
-  trie   = (<$> IT.identity)
-  untrie = IT.apply
-  enumerate = enumerateEnum
-
-instance HasTrie Integer where
-  type Trie Integer = IT.IntTrie
-  trie   = (<$> IT.identity)
-  untrie = IT.apply
-  enumerate = enumerateEnum
--}
-
-
-instance (HasTrie a, HasTrie b, HasTrie c) => HasTrie (a,b,c) where
-    type Trie (a,b,c) = Trie ((a,b),c)
-    trie f = trie (f . trip)
-    untrie t = untrie t . detrip
-    enumerate = enum' trip
-
-trip :: ((a,b),c) -> (a,b,c)
-trip ((a,b),c) = (a,b,c)
-
-detrip :: (a,b,c) -> ((a,b),c)
-detrip (a,b,c) = ((a,b),c)
-
+HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c), (a,b,c), ((a,b),c)
+               , (\ ((a,b),c) -> (a,b,c)), (\ (a,b,c) -> ((a,b),c)))
 
 {-
 type List' x = Either () (x,[x])
@@ -190,6 +162,25 @@ delist :: [x] -> List' x
 delist []     = Left ()
 delist (x:xs) = Right (x,xs)
 -}
+
+
+
+enumerateEnum :: (Enum k, Num k, HasTrie k) => (k :->: v) -> [(k,v)]
+enumerateEnum t = [(k, f k) | k <- [0 ..] `weave` [-1, -2 ..]]
+ where
+   f = untrie t
+
+#define HasTrieIntegral(Type) \
+instance HasTrie Type where { \
+  type Trie Type = IT.IntTrie; \
+  trie   = (<$> IT.identity); \
+  untrie = IT.apply; \
+  enumerate = enumerateEnum; \
+}
+
+HasTrieIntegral(Int)
+HasTrieIntegral(Integer)
+
 
 {--------------------------------------------------------------------
     Misc

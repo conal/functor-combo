@@ -22,16 +22,16 @@ import FunctorCombo.Functor
 -- Pattern functors, similar to PolyC and the Regular class from
 -- UU (e.g., "A Lightweight Approach to Datatype-Generic Rewriting")
 
-class Functor (FunctorOf t) => Regular t where
-  type FunctorOf t :: * -> *
-  wrap   :: FunctorOf t t -> t
-  unwrap :: t -> FunctorOf t t
+class Functor (PF t) => Regular t where
+  type PF t :: * -> *
+  wrap   :: PF t t -> t
+  unwrap :: t -> PF t t
 
 
 -- Some Regular instances:
 
 instance Regular [a] where
-  type FunctorOf [a] = Unit :+: Const a :*: Id
+  type PF [a] = Unit :+: Const a :*: Id
   unwrap []     = L (Const ())
   unwrap (a:as) = R (Const a :*: Id as)
   wrap (L (Const ()))          = []
@@ -46,6 +46,6 @@ instance Regular [a] where
 --   fmap f (Node a ts) = Node (f a) (fmap f ts)
 
 instance Regular (Tree a) where
-  type FunctorOf (Tree a) = Const a :*: []
+  type PF (Tree a) = Const a :*: []
   unwrap (Node a ts) = Const a :*: ts
   wrap (Const a :*: ts) = Node a ts

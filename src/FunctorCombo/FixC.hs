@@ -14,12 +14,14 @@
 
 module FunctorCombo.FixC (FixC,LocFix, up,down) where
 
-import FunctorCombo.Derivative
-import FunctorCombo.Holey
+-- import FunctorCombo.Derivative
+-- import FunctorCombo.Holey
+
+import FunctorCombo.DHoley
 
 
 
-newtype Fix f = Fix (f (Fix f))
+newtype Fix f = Fix { unFix :: f (Fix f) }
 
 -- If Haskell had recursive type synonyms:
 -- 
@@ -75,20 +77,21 @@ Fix (fill (d,t)) :: Fix f
 -}
 
 down :: Holey f => LocFix f -> f (LocFix f)
-down (ds',Fix ts) = fmap (\ (d,t) -> (d:ds',t)) (extract ts)
+down (ds', t) = fmap (\ (d,t') -> (d:ds',t')) (extract (unFix t))
 
 {-
-(ds',Fix ts) :: LocFix f
-(ds',Fix ts) :: (FixC f, Fix f)
-(ds',Fix ts) :: ([Der f (Fix f)], Fix f)
+(ds',t) :: LocFix f
+(ds',t) :: (FixC f, Fix f)
+(ds',t) :: ([Der f (Fix f)], Fix f)
 
 ds' :: [Der f (Fix f)]
-Fix ts :: Fix f
-ts :: f (Fix f)
+t :: Fix f
+unFix t :: f (Fix f)
 
-extract ts :: f (Der f (Fix f), Fix f)
+extract (unFix t) :: f (Der f (Fix f), Fix f)
 
-fmap (\ (d,t) -> (d:ds',t)) (extract ts) :: ([Der f (Fix f)], Fix f)
-                                         :: (FixC f, Fix f)
-                                         :: LocFix f
+fmap (\ (d,t') -> (d:ds',t')) (extract (unFix t))
+  :: ([Der f (Fix f)], Fix f)
+  :: (FixC f, Fix f)
+  :: LocFix f
 -}

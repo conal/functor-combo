@@ -99,3 +99,9 @@ instance (Applicative f, Applicative g) => Applicative (f :*: g) where
   pure a = pure a :*: pure a
   (f :*: g) <*> (a :*: b) = (f <*> a) :*: (g <*> b)
 
+-- instance (Functor g, Functor f) => Functor (g :. f) where
+--   fmap = inO.fmap.fmap
+
+-- or
+
+-- deriving instance (Functor g, Functor f) => Functor (g :. f)

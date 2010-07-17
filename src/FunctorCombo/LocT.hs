@@ -14,18 +14,21 @@
 
 module FunctorCombo.LocT
   (
-    Context,LocT, upR, downR
+    Context,LocT, up, down
   ) where
 
 
-import FunctorCombo.Derivative
-import FunctorCombo.Holey
+-- import FunctorCombo.Derivative
+-- import FunctorCombo.Holey
+
+import FunctorCombo.DHoley
+
 import FunctorCombo.Regular
 
 -- TODO: Bring in pattern functors (as in PolyP), so I don't have to
 -- work on fixpoints directly.  Something like
 -- 
---   type Context t = [Der (FunctorOf t) t]
+--   type Context t = [Der (PF t) t]
 -- 
 --   type LocT t = (Context t, t)
 -- 
@@ -37,17 +40,17 @@ import FunctorCombo.Regular
 
 -- TODO: rename wrap/unwrap, e.g., to reg/unreg
 
-type Context t = [Der (FunctorOf t) t]
+type Context t = [Der (PF t) t]
 
 type LocT t = (Context t, t)
 
-upR :: (Regular t, Holey (FunctorOf t)) => LocT t -> LocT t
-upR ([],_) = error "up: already at top"
-upR (d:ds', t) = (ds', wrap (fill (d,t)))
+up :: (Regular t, Holey (PF t)) => LocT t -> LocT t
+up ([],_) = error "up: already at top"
+up (d:ds', t) = (ds', wrap (fill (d,t)))
 
 
-downR :: (Regular t, Holey (FunctorOf t)) => LocT t -> FunctorOf t (LocT t)
-downR (ds', t) = fmap (\ (d,t') -> (d:ds',t')) (extract (unwrap t))
+down :: (Regular t, Holey (PF t)) => LocT t -> PF t (LocT t)
+down (ds', t) = fmap (\ (d,t') -> (d:ds',t')) (extract (unwrap t))
 
 {-
 
@@ -61,7 +64,7 @@ type Four a = Two (Two a)
 data QuadTree a = QuadTree a (Four (QuadTree a))
 
 instance Regular (QuadTree a) where
-  type FunctorOf (QuadTree a) = Const a :*: Q
+  type PF (QuadTree a) = Const a :*: Q
   unwrap (QuadTree a ((p,q),(r,s))) =
     Const a :*: ((Id p :*: Id q) :*: (Id r :*: Id s))
   wrap (Const a :*: ((Id p :*: Id q) :*: (Id r :*: Id s))) =

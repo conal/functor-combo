@@ -10,14 +10,15 @@
 -- Stability   :  experimental
 -- 
 -- Filling and extracting derivatives (one-hole contexts)
+                                                         
+-- Variation on Holey, integrating 'Der'
 ----------------------------------------------------------------------
 
-module FunctorCombo.Holey (Loc,Holey(..)) where
+module FunctorCombo.DHoley (Holey(..)) where
 
 import Control.Arrow (first,second)
 
 import FunctorCombo.Functor
-import FunctorCombo.Derivative
 
 
 {--------------------------------------------------------------------
@@ -27,22 +28,24 @@ import FunctorCombo.Derivative
 -- | Location, i.e., one-hole context and a value for the hole.
 type Loc f a = (Der f a, a)
 
--- | Filling and creating one-hole contexts
 class Functor f => Holey f where
+  type Der f :: * -> *                  -- ^ Derivative, i.e., one-hole context
   fill    :: Loc f a -> f a             -- ^ Fill a hole
   extract :: f a -> f (Loc f a)         -- ^ All extractions
 
 -- The Functor constraint simplifies several signatures below.
-
 instance Holey (Const z) where
+  type Der (Const z) = Void
   fill = error "fill for Const z: no Der values"
   extract (Const z) = Const z
 
 instance Holey Id where
+  type Der Id = Unit
   fill (Const (), a) = Id a
   extract (Id a) = Id (Const (), a)
 
 instance (Holey f, Holey g) => Holey (f :+: g) where
+  type Der (f :+: g) = Der f :+: Der g
   fill (L df, a) = L (fill (df, a))
   fill (R df, a) = R (fill (df, a))
   extract (L fa) = L ((fmap.first) L (extract fa))
@@ -68,6 +71,7 @@ L ((fmap.first) L (extract fa)) :: (f :+: g) ((Der (f :+: g) a), a)
 -- Der (f :*: g) = Der f :*: g  :+:  f :*: Der g
 
 instance (Holey f, Holey g) => Holey (f :*: g) where
+  type Der (f :*: g) = Der f :*: g  :+:  f :*: Der g
   fill (L (dfa :*:  ga), a) = fill (dfa, a) :*: ga
   fill (R ( fa :*: dga), a) = fa :*: fill (dga, a)
   extract (fa :*: ga) = (fmap.first) (L . (:*: ga)) (extract fa) :*:
@@ -147,6 +151,7 @@ fmap (tweak2 . second extract) (extract gfa)
 -- Der (g :.  f) = Der g :. f  :*:  Der f
 
 instance (Holey f, Holey g) => Holey (g :. f) where
+  type Der (g :.  f) = Der g :. f  :*:  Der f
   -- fill (O dgfa :*: dfa) = O . fill dgfa . fill dfa
   fill (O dgfa :*: dfa, a) = O (fill (dgfa, fill (dfa, a)))
   -- extract (O gfa) = O (extractGF gfa)
