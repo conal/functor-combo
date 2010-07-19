@@ -168,6 +168,7 @@ HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c, HasTrie d)
 -- I think the problem is infinite types.  Try an explicit newtype to
 -- break the cycle.
 
+
 -- newtype ListTrie a v = ListTrie (Trie (PF [a] [a]) v)
  
 -- instance HasTrie a => HasTrie [a] where
@@ -176,42 +177,24 @@ HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c, HasTrie d)
 --   untrie (ListTrie t) = untrie t . unwrap
 --   enumerate (ListTrie t) = (result.fmap.first) wrap enumerate $ t
 
-{-
+-- Works.  Now abstract into a macro
 
-f :: [a] -> v
-
-wrap :: PF [a] [a] -> [a]
-
-PF [a] = Unit :+: Const a :*: Id
-
-f . wrap :: PF [a] [a] -> v
-
--}
-
--- newtype TreeTrie a v = TreeTrie (Trie (PF (Tree a) (Tree a)) v)
- 
--- instance HasTrie a => HasTrie (Tree a) where
---   type Trie (Tree a) = TreeTrie a
---   trie f = TreeTrie (trie (f . wrap))
---   untrie (TreeTrie t) = untrie t . unwrap
---   enumerate (TreeTrie t) = (result.fmap.first) wrap enumerate $ t
-
-
-#define HasTrieRegular(Context,Type,TrieT,TrieCon) \
-newtype TrieT v = TrieCon (Trie (PF (Type) (Type)) v); \
+#define HasTrieRegular(Context,Type,TrieType,TrieCon) \
+newtype TrieType v = TrieCon (Trie (PF (Type) (Type)) v); \
 instance Context => HasTrie (Type) where { \
-  type Trie (Type) = TrieT; \
+  type Trie (Type) = TrieType; \
   trie f = TrieCon (trie (f . wrap)); \
   untrie (TrieCon t) = untrie t . unwrap; \
   enumerate (TrieCon t) = (result.fmap.first) wrap enumerate $ t; \
 }
 
--- newtype ListTrie a v = ListTrie (Trie (PF [a] [a]) v)
+-- For instance,
 
--- HasTrieRegular(HasTrie a, [a], ListTrie a, ListTrie)
+-- HasTrieRegular(HasTrie a, [a] , ListTrie a, ListTrie)
+-- HasTrieRegular(HasTrie a, Tree, TreeTrie a, TreeTrie)
 
--- HasTrieRegular(HasTrie a, Tree a, TreeTrie a, TreeTrie)
--- HasTrieRegular(HasTrie a, Tree a, TreeTrie a, TreeTrie)
+-- Simplify a bit with a macro for unary regular types.
+-- Make similar defs for binary etc as needed.
 
 #define HasTrieRegular1(TypeCon,TrieCon) \
 HasTrieRegular(HasTrie a, TypeCon a, TrieCon a, TrieCon)
@@ -220,18 +203,6 @@ HasTrieRegular1([]  , ListTrie)
 HasTrieRegular1(Tree, TreeTrie)
 
 
--- HasTrieRegular1(Tree,TreeTrie)
-
-
--- QHasTrieRegular1([])
--- QHasTrieRegular1(Tree)
-
-
--- OOPS.  GHC uses cpp in traditional mode, which doesn't handle token splice (##)
-
--- #define Fiddle(x) x##fiddle = "Fiddle"
-
--- Fiddle(foo)
 
 enumerateEnum :: (Enum k, Num k, HasTrie k) => (k :->: v) -> [(k,v)]
 enumerateEnum t = [(k, f k) | k <- [0 ..] `weave` [-1, -2 ..]]
