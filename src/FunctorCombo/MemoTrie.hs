@@ -11,6 +11,9 @@
 -- Stability   :  experimental
 -- 
 -- Functor-based memo tries (strict for now)
+-- 
+-- Warning: this formulation cannot handle recursive types.
+-- The type checker fails to terminate.  Wondering about solutions.
 ----------------------------------------------------------------------
 
 module FunctorCombo.MemoTrie
@@ -22,10 +25,12 @@ import Control.Arrow (first)
 import Control.Applicative ((<$>))
 
 import qualified Data.IntTrie as IT  -- data-inttrie
+import Data.Tree
 
 import Control.Compose (result)
 
 import FunctorCombo.Functor
+import FunctorCombo.Regular
 
 
 {--------------------------------------------------------------------
@@ -112,58 +117,121 @@ instance (HasTrie a, HasTrie b) => HasTrie (a , b) where
 
 -- Experiment:
 
-fToPair :: (f:*:g) a -> (f a, g a)
-fToPair (fa :*: ga) = (fa,ga)
-
-pairToF :: (f a, g a) -> (f:*:g) a
-pairToF (fa,ga) = (fa :*: ga)
-
-#define HasTrieIsomorph(Context,Type,IsoType,fromIso,toIso) \
+#define HasTrieIsomorph(Context,Type,IsoType,toIso,fromIso) \
 instance Context => HasTrie (Type) where {\
   type Trie (Type) = Trie (IsoType); \
-  trie f = trie (f . fromIso); \
-  untrie t = untrie t . toIso; \
-  enumerate = (result.fmap.first) fromIso enumerate; \
+  trie f = trie (f . (fromIso)); \
+  untrie t = untrie t . (toIso); \
+  enumerate = (result.fmap.first) (fromIso) enumerate; \
 }
 
+HasTrieIsomorph( HasTrie a, Const a x, a, getConst, Const )
+
+
+HasTrieIsomorph( HasTrie a, Id a, a, unId, Id )
+
 HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
-               , (f :*: g) a, (f a,g a), pairToF, fToPair)
+               , (f :*: g) a, (f a,g a)
+               , \ (fa :*: ga) -> (fa,ga), \ (fa,ga) -> (fa :*: ga) )
+
+HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
+               , (f :+: g) a, Either (f a) (g a)
+               , eitherF Left Right, either L R )
 
 
-type BoolT = Either () ()
-
-encodeBool :: Bool -> BoolT
-encodeBool False = Left  ()
-encodeBool True  = Right ()
-
-decodeBool :: BoolT -> Bool
-decodeBool (Left  ()) = False
-decodeBool (Right ()) = True
-
-HasTrieIsomorph((), Bool, BoolT, decodeBool, encodeBool)
+HasTrieIsomorph( (), Bool, Either () ()
+               , bool (Left ()) (Right ())
+               , either (\ () -> False) (\ () -> True))
 
 HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c), (a,b,c), ((a,b),c)
-               , (\ ((a,b),c) -> (a,b,c)), (\ (a,b,c) -> ((a,b),c)))
+               , \ (a,b,c) -> ((a,b),c), \ ((a,b),c) -> (a,b,c))
+
+HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c, HasTrie d)
+               , (a,b,c,d), ((a,b,c),d)
+               , \ (a,b,c,d) -> ((a,b,c),d), \ ((a,b,c),d) -> (a,b,c,d))
+
+
+-- #define HasTrieRegular(Context,Type) \
+-- HasTrieIsomorph(Context, Type, PF (Type) (Type) , unwrap, wrap)
+
+-- #define HasTrieRegular1(TypeCon) \
+-- HasTrieRegular(HasTrie a, TypeCon a)
+
+-- Hangs ghc 6.12.1:
+-- 
+-- HasTrieRegular(HasTrie a, [a])
+-- HasTrieRegular(HasTrie a, Tree a)
+
+-- HasTrieRegular1([])
+-- HasTrieRegular1(Tree)
+
+-- I think the problem is infinite types.  Try an explicit newtype to
+-- break the cycle.
+
+-- newtype ListTrie a v = ListTrie (Trie (PF [a] [a]) v)
+ 
+-- instance HasTrie a => HasTrie [a] where
+--   type Trie [a] = ListTrie a
+--   trie f = ListTrie (trie (f . wrap))
+--   untrie (ListTrie t) = untrie t . unwrap
+--   enumerate (ListTrie t) = (result.fmap.first) wrap enumerate $ t
 
 {-
-type List' x = Either () (x,[x])
 
--- Hangs the compiler in ghc 6.12.1 :(
-instance HasTrie x => HasTrie [x] where
-    type Trie [x] = Trie (List' x)
-    trie f = trie (f . list)
-    untrie t = untrie t . delist
-    enumerate = enum' list
+f :: [a] -> v
 
-list :: List' x -> [x]
-list = either (const []) (uncurry (:))
+wrap :: PF [a] [a] -> [a]
 
-delist :: [x] -> List' x
-delist []     = Left ()
-delist (x:xs) = Right (x,xs)
+PF [a] = Unit :+: Const a :*: Id
+
+f . wrap :: PF [a] [a] -> v
+
 -}
 
+-- newtype TreeTrie a v = TreeTrie (Trie (PF (Tree a) (Tree a)) v)
+ 
+-- instance HasTrie a => HasTrie (Tree a) where
+--   type Trie (Tree a) = TreeTrie a
+--   trie f = TreeTrie (trie (f . wrap))
+--   untrie (TreeTrie t) = untrie t . unwrap
+--   enumerate (TreeTrie t) = (result.fmap.first) wrap enumerate $ t
 
+
+#define HasTrieRegular(Context,Type,TrieT,TrieCon) \
+newtype TrieT v = TrieCon (Trie (PF (Type) (Type)) v); \
+instance Context => HasTrie (Type) where { \
+  type Trie (Type) = TrieT; \
+  trie f = TrieCon (trie (f . wrap)); \
+  untrie (TrieCon t) = untrie t . unwrap; \
+  enumerate (TrieCon t) = (result.fmap.first) wrap enumerate $ t; \
+}
+
+-- newtype ListTrie a v = ListTrie (Trie (PF [a] [a]) v)
+
+-- HasTrieRegular(HasTrie a, [a], ListTrie a, ListTrie)
+
+-- HasTrieRegular(HasTrie a, Tree a, TreeTrie a, TreeTrie)
+-- HasTrieRegular(HasTrie a, Tree a, TreeTrie a, TreeTrie)
+
+#define HasTrieRegular1(TypeCon,TrieCon) \
+HasTrieRegular(HasTrie a, TypeCon a, TrieCon a, TrieCon)
+
+HasTrieRegular1([]  , ListTrie)
+HasTrieRegular1(Tree, TreeTrie)
+
+
+-- HasTrieRegular1(Tree,TreeTrie)
+
+
+-- QHasTrieRegular1([])
+-- QHasTrieRegular1(Tree)
+
+
+-- OOPS.  GHC uses cpp in traditional mode, which doesn't handle token splice (##)
+
+-- #define Fiddle(x) x##fiddle = "Fiddle"
+
+-- Fiddle(foo)
 
 enumerateEnum :: (Enum k, Num k, HasTrie k) => (k :->: v) -> [(k,v)]
 enumerateEnum t = [(k, f k) | k <- [0 ..] `weave` [-1, -2 ..]]
@@ -188,7 +256,8 @@ HasTrieIntegral(Integer)
 
 type Unop a = a -> a
 
-
+bool :: a -> a -> Bool -> a
+bool t e b = if b then t else e
 
 {-
 

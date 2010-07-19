@@ -14,7 +14,7 @@
 
 module FunctorCombo.Functor
   (
-    Const(..),Void,Unit,Id(..),inId,inId2,(:+:)(..),(:*:)(..),(:.)(..),inO,inO2,(~>)
+    Const(..),Void,Unit,Id(..),inId,inId2,(:+:)(..),eitherF,(:*:)(..),(:.)(..),inO,inO2,(~>)
   ) where
 
 
@@ -47,6 +47,10 @@ data (f :*: g) a = f a :*: g a
 
 -- | Sum on unary type constructors
 data (f :+: g) a = L (f a) | R (g a)
+
+eitherF :: (f a -> b) -> (g a -> b) -> (f :+: g) a -> b
+eitherF p _ (L fa) = p fa
+eitherF _ q (R ga) = q ga
 
 -- From Control.Compose:
 -- 
