@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeOperators, TypeFamilies, UndecidableInstances, CPP
  #-}
 {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}  -- temporary while testing
 ----------------------------------------------------------------------
 -- |
 -- Module      :  FunctorCombo.MemoTrie
@@ -125,8 +126,22 @@ instance Context => HasTrie (Type) where {\
   enumerate = (result.fmap.first) (fromIso) enumerate; \
 }
 
-HasTrieIsomorph( HasTrie a, Const a x, a, getConst, Const )
 
+HasTrieIsomorph( (), Bool, Either () ()
+               , bool (Left ()) (Right ())
+               , either (\ () -> True) (\ () -> False))
+
+HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c), (a,b,c), ((a,b),c)
+               , \ (a,b,c) -> ((a,b),c), \ ((a,b),c) -> (a,b,c))
+
+HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c, HasTrie d)
+               , (a,b,c,d), ((a,b,c),d)
+               , \ (a,b,c,d) -> ((a,b,c),d), \ ((a,b,c),d) -> (a,b,c,d))
+
+
+-- As well as the functor combinators themselves
+
+HasTrieIsomorph( HasTrie a, Const a x, a, getConst, Const )
 
 HasTrieIsomorph( HasTrie a, Id a, a, unId, Id )
 
@@ -138,17 +153,10 @@ HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
                , (f :+: g) a, Either (f a) (g a)
                , eitherF Left Right, either L R )
 
+HasTrieIsomorph( HasTrie (g (f a))
+               , (g :. f) a, g (f a) , unO, O )
 
-HasTrieIsomorph( (), Bool, Either () ()
-               , bool (Left ()) (Right ())
-               , either (\ () -> False) (\ () -> True))
 
-HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c), (a,b,c), ((a,b),c)
-               , \ (a,b,c) -> ((a,b),c), \ ((a,b),c) -> (a,b,c))
-
-HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c, HasTrie d)
-               , (a,b,c,d), ((a,b,c),d)
-               , \ (a,b,c,d) -> ((a,b,c),d), \ ((a,b,c),d) -> (a,b,c,d))
 
 
 -- #define HasTrieRegular(Context,Type) \
@@ -169,7 +177,7 @@ HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c, HasTrie d)
 -- break the cycle.
 
 
--- newtype ListTrie a v = ListTrie (Trie (PF [a] [a]) v)
+-- newtype ListTrie a v = ListTrie (PF [a] [a] :->: v)
  
 -- instance HasTrie a => HasTrie [a] where
 --   type Trie [a] = ListTrie a
@@ -180,13 +188,16 @@ HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c, HasTrie d)
 -- Works.  Now abstract into a macro
 
 #define HasTrieRegular(Context,Type,TrieType,TrieCon) \
-newtype TrieType v = TrieCon (Trie (PF (Type) (Type)) v); \
+newtype TrieType v = TrieCon (PF (Type) (Type) :->: v); \
 instance Context => HasTrie (Type) where { \
   type Trie (Type) = TrieType; \
   trie f = TrieCon (trie (f . wrap)); \
   untrie (TrieCon t) = untrie t . unwrap; \
-  enumerate (TrieCon t) = (result.fmap.first) wrap enumerate $ t; \
-}
+  enumerate (TrieCon t) = (result.fmap.first) wrap enumerate t; \
+}; \
+HasTrieIsomorph( HasTrie (PF (Type) (Type) :->: v) \
+               , TrieType v, PF (Type) (Type) :->: v \
+               , \ (TrieCon w) -> w, TrieCon )
 
 -- For instance,
 
@@ -201,6 +212,14 @@ HasTrieRegular(HasTrie a, TypeCon a, TrieCon a, TrieCon)
 
 HasTrieRegular1([]  , ListTrie)
 HasTrieRegular1(Tree, TreeTrie)
+
+-- HasTrieIsomorph(Context,Type,IsoType,toIso,fromIso)
+
+-- HasTrieIsomorph( HasTrie (PF [a] [a] :->: v)
+--                , ListTrie a v, PF [a] [a] :->: v
+--                , \ (ListTrie w) -> w, ListTrie )
+
+
 
 
 
@@ -219,6 +238,11 @@ instance HasTrie Type where { \
 
 HasTrieIntegral(Int)
 HasTrieIntegral(Integer)
+
+
+-- Memoizing higher-order functions
+
+HasTrieIsomorph((HasTrie a, HasTrie (a :->: b)), a -> b, a :->: b, trie, untrie)
 
 
 {--------------------------------------------------------------------
@@ -246,4 +270,97 @@ fib m = mfib m
 
 -- The eta-redex in fib is important to prevent a CAF.
 
+
 -}
+
+ft1, memoFt1 :: (Bool -> Bool) -> Bool
+ft1 f = f False
+memoFt1 = memo ft1
+
+ft2, memoFt2 :: (Bool -> Int) -> [Int]
+ft2 f = [f False, f True]
+memoFt2 = memo ft2
+
+-- ft2 (bool 0 1)   -- [1,0]
+-- memoFt2 (bool 0 1)   -- [0,1]  oops
+
+ft3 :: (Bool -> Int) -> (Int,Int)
+ft3 f = (f False, f True)
+
+f3 :: Bool -> Int
+f3 = bool 0 1
+
+trie3a :: (Bool -> Int) :->: (Int, Int)
+trie3a = trie ft3
+
+trie3b :: (Bool :->: Int) :->: (Int, Int)
+trie3b = trie3a
+
+trie3c :: (Either () () :->: Int) :->: (Int, Int)
+trie3c = trie3a
+
+trie3d :: ((Trie () :*: Trie ()) Int) :->: (Int, Int)
+trie3d = trie3a
+
+trie3e :: (Trie () Int, Trie () Int) :->: (Int, Int)
+trie3e = trie3a
+
+trie3f :: (() :->: Int, () :->: Int) :->: (Int, Int)
+trie3f = trie3a
+
+trie3g :: (Int, Int) :->: (Int, Int)
+trie3g = trie3a
+
+trie3h :: (Trie Int :. Trie Int) (Int, Int)
+trie3h = trie3a
+
+trie3i :: Int :->: Int :->: (Int, Int)
+trie3i = unO trie3a
+
+
+-- (Int, Int) :->: (Int, Int)
+-- 
+
+{-
+
+*FunctorCombo.MemoTrie> ft3 f3
+(1,0)
+*FunctorCombo.MemoTrie> memo ft3 f3
+(0,1)
+*FunctorCombo.MemoTrie> trie ft3
+<interactive>:1:0:
+    No instance for (Show (IT.IntTrie (IT.IntTrie (Int, Int))))
+      arising from a use of `print' at <interactive>:1:0-7
+    Possible fix:
+      add an instance declaration for
+      (Show (IT.IntTrie (IT.IntTrie (Int, Int))))
+    In a stmt of a 'do' expression: print it
+
+*FunctorCombo.MemoTrie> :ty trie ft3
+trie ft3 :: (Bool -> Int) :->: (Int, Int)
+
+-}
+
+
+ft4 :: (Int,Int) -> (Int,Int)
+ft4 (a,b) = (b,a)
+
+i4 :: (Int,Int)
+i4 = (1,0)
+
+-- *FunctorCombo.MemoTrie> ft4 i4
+-- (0,1)
+-- *FunctorCombo.MemoTrie> memo ft4 i4
+-- (0,1)
+
+
+ft5 :: (Either () () -> Int) -> (Int,Int)
+ft5 f = (f (Left ()), f (Right ()))
+
+f5 :: Either () () -> Int
+f5 = either (const 1) (const 0)  -- bool 0 1
+
+-- *FunctorCombo.MemoTrie> ft5 f5
+-- (1,0)
+-- *FunctorCombo.MemoTrie> memo ft5 f5
+-- (1,0)

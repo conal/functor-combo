@@ -14,13 +14,14 @@
 
 module FunctorCombo.Functor
   (
-    Const(..),Void,Unit,Id(..),inId,inId2,(:+:)(..),eitherF,(:*:)(..),(:.)(..),inO,inO2,(~>)
+    Const(..),Void,Unit,Id(..),unId,inId,inId2,(:+:)(..),eitherF
+  , (:*:)(..),(:.)(..),unO,inO,inO2,(~>)
   ) where
 
 
 import Control.Applicative (Applicative(..),Const(..))
 
-import Control.Compose (Id(..),inId,inId2,(:.)(..), inO,inO2,(~>))
+import Control.Compose (Id(..),unId,inId,inId2,(:.)(..),unO,inO,inO2,(~>))
 
 
 -- infixl 9 :.
@@ -40,13 +41,13 @@ type Unit = Const ()
 
 -- From Control.Compose:
 -- 
---   data Id a = Id { unId :: a }
+--   data Id a = Id a
 
 -- | Product on unary type constructors
-data (f :*: g) a = f a :*: g a
+data (f :*: g) a = f a :*: g a deriving (Show)
 
 -- | Sum on unary type constructors
-data (f :+: g) a = L (f a) | R (g a)
+data (f :+: g) a = L (f a) | R (g a) deriving (Show)
 
 eitherF :: (f a -> b) -> (g a -> b) -> (f :+: g) a -> b
 eitherF p _ (L fa) = p fa
@@ -54,7 +55,7 @@ eitherF _ q (R ga) = q ga
 
 -- From Control.Compose:
 -- 
---   newtype (g :. f) a = O { unO :: g (f a) }
+--   newtype (g :. f) a = O (g (f a))
 
 
 {--------------------------------------------------------------------
