@@ -43,24 +43,24 @@ instance Holey Id where
   extract (Id a) = Id (Const (), a)
 
 instance (Holey f, Holey g) => Holey (f :+: g) where
-  fill (L df, a) = L (fill (df, a))
-  fill (R df, a) = R (fill (df, a))
-  extract (L fa) = L ((fmap.first) L (extract fa))
-  extract (R ga) = R ((fmap.first) R (extract ga))
+  fill (InL df, a) = InL (fill (df, a))
+  fill (InR df, a) = InR (fill (df, a))
+  extract (InL fa) = InL ((fmap.first) InL (extract fa))
+  extract (InR ga) = InR ((fmap.first) InR (extract ga))
 
 {-
 
-L fa :: (f :+: g) a
+InL fa :: (f :+: g) a
 
 fa :: f a
 
 extract fa :: f (Loc f a)
 
-(fmap.first) L (extract fa) :: f ((Der f :+: Der g) a, a)
+(fmap.first) InL (extract fa) :: f ((Der f :+: Der g) a, a)
 
-(fmap.first) L (extract fa) :: f ((Der (f :+: g) a), a)
+(fmap.first) InL (extract fa) :: f ((Der (f :+: g) a), a)
 
-L ((fmap.first) L (extract fa)) :: (f :+: g) ((Der (f :+: g) a), a)
+InL ((fmap.first) InL (extract fa)) :: (f :+: g) ((Der (f :+: g) a), a)
 
 -}
 
@@ -68,10 +68,10 @@ L ((fmap.first) L (extract fa)) :: (f :+: g) ((Der (f :+: g) a), a)
 -- Der (f :*: g) = Der f :*: g  :+:  f :*: Der g
 
 instance (Holey f, Holey g) => Holey (f :*: g) where
-  fill (L (dfa :*:  ga), a) = fill (dfa, a) :*: ga
-  fill (R ( fa :*: dga), a) = fa :*: fill (dga, a)
-  extract (fa :*: ga) = (fmap.first) (L . (:*: ga)) (extract fa) :*:
-                        (fmap.first) (R . (fa :*:)) (extract ga)
+  fill (InL (dfa :*:  ga), a) = fill (dfa, a) :*: ga
+  fill (InR ( fa :*: dga), a) = fa :*: fill (dga, a)
+  extract (fa :*: ga) = (fmap.first) (InL . (:*: ga)) (extract fa) :*:
+                        (fmap.first) (InR . (fa :*:)) (extract ga)
 
 {-
 
@@ -83,15 +83,15 @@ extract fa :: f (Loc f a)
 
 (fmap.first) (:*: ga) (extract fa) :: f ((Der f :*: g) a, a)
 
-(fmap.first) (L . (:*: ga)) (extract fa)
+(fmap.first) (InL . (:*: ga)) (extract fa)
   :: f (((Der f :*: g) :+: (f :*: Der g)) a, a)
 
-(fmap.first) (L . (:*: ga)) (extract fa) :: f ((Der (f :*: g)) a, a)
+(fmap.first) (InL . (:*: ga)) (extract fa) :: f ((Der (f :*: g)) a, a)
 
-(fmap.first) (R . (fa :*:)) (extract ga) :: g ((Der (f :*: g)) a, a)
+(fmap.first) (InR . (fa :*:)) (extract ga) :: g ((Der (f :*: g)) a, a)
 
 
-(fmap.first) (L . (:*: ga)) (extract fa) :*: (fmap.first) (R . (fa :*:)) (extract ga)
+(fmap.first) (InL . (:*: ga)) (extract fa) :*: (fmap.first) (InR . (fa :*:)) (extract ga)
   :: (f :*: g) (Der (f :*: g) a, a)
 
 -}

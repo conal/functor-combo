@@ -47,11 +47,11 @@ type Unit = Const ()
 data (f :*: g) a = f a :*: g a deriving (Show)
 
 -- | Sum on unary type constructors
-data (f :+: g) a = L (f a) | R (g a) deriving (Show)
+data (f :+: g) a = InL (f a) | InR (g a) deriving (Show)
 
 eitherF :: (f a -> b) -> (g a -> b) -> (f :+: g) a -> b
-eitherF p _ (L fa) = p fa
-eitherF _ q (R ga) = q ga
+eitherF p _ (InL fa) = p fa
+eitherF _ q (InR ga) = q ga
 
 -- From Control.Compose:
 -- 
@@ -71,13 +71,13 @@ instance Functor Void where
 -- deriving instance Functor Id
 
 -- instance (Functor f, Functor g) => Functor (f :+: g) where
---   fmap h (L fa) = L (fmap h fa)
---   fmap h (R ga) = R (fmap h ga)
+--   fmap h (InL fa) = InL (fmap h fa)
+--   fmap h (InR ga) = InR (fmap h ga)
 
 -- i.e.,
 -- 
---     fmap h . L  ==  L . fmap h
---     fmap h . R  ==  R . fmap h
+--     fmap h . InL  ==  InL . fmap h
+--     fmap h . InR  ==  InR . fmap h
 
 deriving instance (Functor f, Functor g) => Functor (f :+: g)
 

@@ -94,11 +94,11 @@ instance HasTrie () where
   untrie (Id v) = const v
   enumerate (Id a) = [((),a)]
 
-instance (HasTrie l, HasTrie r) => HasTrie (Either l r) where
-  type Trie (Either l r) = Trie l :*: Trie r
+instance (HasTrie a, HasTrie b) => HasTrie (Either a b) where
+  type Trie (Either a b) = Trie a :*: Trie b
   trie   f           = trie (f . Left) :*: trie (f . Right)
-  untrie (tl :*: tr) = untrie tl `either` untrie tr
-  enumerate (tl :*: tr) = enum' Left tl `weave` enum' Right tr
+  untrie (ta :*: tb) = untrie ta `either` untrie tb
+  enumerate (ta :*: tb) = enum' Left ta `weave` enum' Right tb
 
 enum' :: (HasTrie a) => (a -> a') -> (a :->: b) -> [(a', b)]
 enum' f = (fmap.first) f . enumerate
@@ -141,7 +141,7 @@ HasTrieIsomorph((HasTrie a, HasTrie b, HasTrie c, HasTrie d)
 
 -- As well as the functor combinators themselves
 
-HasTrieIsomorph( HasTrie a, Const a x, a, getConst, Const )
+HasTrieIsomorph( HasTrie x, Const x a, x, getConst, Const )
 
 HasTrieIsomorph( HasTrie a, Id a, a, unId, Id )
 
@@ -151,7 +151,7 @@ HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
 
 HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
                , (f :+: g) a, Either (f a) (g a)
-               , eitherF Left Right, either L R )
+               , eitherF Left Right, either InL InR )
 
 HasTrieIsomorph( HasTrie (g (f a))
                , (g :. f) a, g (f a) , unO, O )
@@ -273,94 +273,37 @@ fib m = mfib m
 
 -}
 
-ft1, memoFt1 :: (Bool -> Bool) -> Bool
-ft1 f = f False
-memoFt1 = memo ft1
+ft1 :: (Bool -> a) -> (a,a)
+ft1 f = (f False, f True)
 
-ft2, memoFt2 :: (Bool -> Int) -> [Int]
-ft2 f = [f False, f True]
-memoFt2 = memo ft2
+f1 :: Bool -> Int
+f1 False = 0
+f1 True  = 1
 
--- ft2 (bool 0 1)   -- [1,0]
--- memoFt2 (bool 0 1)   -- [0,1]  oops
+trie1a :: (Bool -> Int) :->: (Int, Int)
+trie1a = trie ft1
 
-ft3 :: (Bool -> Int) -> (Int,Int)
-ft3 f = (f False, f True)
+trie1b :: (Bool :->: Int) :->: (Int, Int)
+trie1b = trie1a
 
-f3 :: Bool -> Int
-f3 = bool 0 1
+trie1c :: (Either () () :->: Int) :->: (Int, Int)
+trie1c = trie1a
 
-trie3a :: (Bool -> Int) :->: (Int, Int)
-trie3a = trie ft3
+trie1d :: ((Trie () :*: Trie ()) Int) :->: (Int, Int)
+trie1d = trie1a
 
-trie3b :: (Bool :->: Int) :->: (Int, Int)
-trie3b = trie3a
+trie1e :: (Trie () Int, Trie () Int) :->: (Int, Int)
+trie1e = trie1a
 
-trie3c :: (Either () () :->: Int) :->: (Int, Int)
-trie3c = trie3a
+trie1f :: (() :->: Int, () :->: Int) :->: (Int, Int)
+trie1f = trie1a
 
-trie3d :: ((Trie () :*: Trie ()) Int) :->: (Int, Int)
-trie3d = trie3a
+trie1g :: (Int, Int) :->: (Int, Int)
+trie1g = trie1a
 
-trie3e :: (Trie () Int, Trie () Int) :->: (Int, Int)
-trie3e = trie3a
+trie1h :: (Trie Int :. Trie Int) (Int, Int)
+trie1h = trie1a
 
-trie3f :: (() :->: Int, () :->: Int) :->: (Int, Int)
-trie3f = trie3a
+trie1i :: Int :->: Int :->: (Int, Int)
+trie1i = unO trie1a
 
-trie3g :: (Int, Int) :->: (Int, Int)
-trie3g = trie3a
-
-trie3h :: (Trie Int :. Trie Int) (Int, Int)
-trie3h = trie3a
-
-trie3i :: Int :->: Int :->: (Int, Int)
-trie3i = unO trie3a
-
-
--- (Int, Int) :->: (Int, Int)
--- 
-
-{-
-
-*FunctorCombo.MemoTrie> ft3 f3
-(1,0)
-*FunctorCombo.MemoTrie> memo ft3 f3
-(0,1)
-*FunctorCombo.MemoTrie> trie ft3
-<interactive>:1:0:
-    No instance for (Show (IT.IntTrie (IT.IntTrie (Int, Int))))
-      arising from a use of `print' at <interactive>:1:0-7
-    Possible fix:
-      add an instance declaration for
-      (Show (IT.IntTrie (IT.IntTrie (Int, Int))))
-    In a stmt of a 'do' expression: print it
-
-*FunctorCombo.MemoTrie> :ty trie ft3
-trie ft3 :: (Bool -> Int) :->: (Int, Int)
-
--}
-
-
-ft4 :: (Int,Int) -> (Int,Int)
-ft4 (a,b) = (b,a)
-
-i4 :: (Int,Int)
-i4 = (1,0)
-
--- *FunctorCombo.MemoTrie> ft4 i4
--- (0,1)
--- *FunctorCombo.MemoTrie> memo ft4 i4
--- (0,1)
-
-
-ft5 :: (Either () () -> Int) -> (Int,Int)
-ft5 f = (f (Left ()), f (Right ()))
-
-f5 :: Either () () -> Int
-f5 = either (const 1) (const 0)  -- bool 0 1
-
--- *FunctorCombo.MemoTrie> ft5 f5
--- (1,0)
--- *FunctorCombo.MemoTrie> memo ft5 f5
--- (1,0)

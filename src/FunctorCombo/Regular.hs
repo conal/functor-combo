@@ -32,10 +32,10 @@ class Functor (PF t) => Regular t where
 
 instance Regular [a] where
   type PF [a] = Unit :+: Const a :*: Id
-  unwrap []     = L (Const ())
-  unwrap (a:as) = R (Const a :*: Id as)
-  wrap (L (Const ()))          = []
-  wrap (R (Const a :*: Id as)) = a:as
+  unwrap []     = InL (Const ())
+  unwrap (a:as) = InR (Const a :*: Id as)
+  wrap (InL (Const ()))          = []
+  wrap (InR (Const a :*: Id as)) = a:as
 
 
 -- Rose tree (from Data.Tree)
