@@ -273,6 +273,8 @@ fib m = mfib m
 
 -}
 
+{-
+
 ft1 :: (Bool -> a) -> (a,a)
 ft1 f = (f False, f True)
 
@@ -307,3 +309,4 @@ trie1h = trie1a
 trie1i :: Int :->: Int :->: (Int, Int)
 trie1i = unO trie1a
 
+-}
