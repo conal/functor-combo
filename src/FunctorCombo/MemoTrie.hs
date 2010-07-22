@@ -273,38 +273,40 @@ fib m = mfib m
 
 -}
 
+{-
 
-ft1 :: (Bool -> a) -> (a,a)
-ft1 f = (f False, f True)
+ft1 :: (Bool -> a) -> [a]
+ft1 f = [f False, f True]
 
 f1 :: Bool -> Int
 f1 False = 0
 f1 True  = 1
 
-trie1a :: HasTrie a => (Bool -> a) :->: (a, a)
+trie1a :: HasTrie a => (Bool -> a) :->: [a]
 trie1a = trie ft1
 
-trie1b :: HasTrie a => (Bool :->: a) :->: (a, a)
+trie1b :: HasTrie a => (Bool :->: a) :->: [a]
 trie1b = trie1a
 
-trie1c :: HasTrie a => (Either () () :->: a) :->: (a, a)
+trie1c :: HasTrie a => (Either () () :->: a) :->: [a]
 trie1c = trie1a
 
-trie1d :: HasTrie a => ((Trie () :*: Trie ()) a) :->: (a, a)
+trie1d :: HasTrie a => ((Trie () :*: Trie ()) a) :->: [a]
 trie1d = trie1a
 
-trie1e :: HasTrie a => (Trie () a, Trie () a) :->: (a, a)
+trie1e :: HasTrie a => (Trie () a, Trie () a) :->: [a]
 trie1e = trie1a
 
-trie1f :: HasTrie a => (() :->: a, () :->: a) :->: (a, a)
+trie1f :: HasTrie a => (() :->: a, () :->: a) :->: [a]
 trie1f = trie1a
 
-trie1g :: HasTrie a => (a, a) :->: (a, a)
+trie1g :: HasTrie a => (a, a) :->: [a]
 trie1g = trie1a
 
-trie1h :: HasTrie a => (Trie a :. Trie a) (a, a)
+trie1h :: HasTrie a => (Trie a :. Trie a) [a]
 trie1h = trie1a
 
-trie1i :: HasTrie a => a :->: a :->: (a, a)
+trie1i :: HasTrie a => a :->: a :->: [a]
 trie1i = unO trie1a
 
+-}
