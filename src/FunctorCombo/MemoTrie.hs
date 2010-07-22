@@ -13,8 +13,6 @@
 -- 
 -- Functor-based memo tries (strict for now)
 -- 
--- Warning: this formulation cannot handle recursive types.
--- The type checker fails to terminate.  Wondering about solutions.
 ----------------------------------------------------------------------
 
 module FunctorCombo.MemoTrie
@@ -308,5 +306,27 @@ trie1h = trie1a
 
 trie1i :: HasTrie a => a :->: a :->: [a]
 trie1i = unO trie1a
+
+-}
+
+{-
+
+ft2 :: ([Bool] -> Int) -> Int
+ft2 f = f (alts 15)
+
+alts :: Int -> [Bool]
+alts n = take n (cycle [True,False])
+
+f2 :: [Bool] -> Int
+f2 = length . filter id
+
+-- Memoization fails:
+
+-- *FunctorCombo.MemoTrie> ft2 f2
+-- 8
+-- *FunctorCombo.MemoTrie> memo ft2 f2
+-- ... (hang forever) ...
+
+-- Would nonstrict memoization work?  <http://conal.net/blog/posts/nonstrict-memoization/>
 
 -}

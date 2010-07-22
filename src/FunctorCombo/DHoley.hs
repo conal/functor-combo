@@ -29,9 +29,12 @@ import FunctorCombo.Functor
 type Loc f a = (Der f a, a)
 
 class Functor f => Holey f where
-  type Der f :: * -> *                  -- ^ Derivative, i.e., one-hole context
-  fill    :: Loc f a -> f a             -- ^ Fill a hole
-  extract :: f a -> f (Loc f a)         -- ^ All extractions
+  -- | Derivative, i.e., one-hole context
+  type Der f :: * -> *
+  -- | Fill a hole
+  fill    :: Loc f a -> f a
+  -- | All extractions
+  extract :: f a -> f (Loc f a)
 
 -- The Functor constraint simplifies several signatures below.
 instance Holey (Const z) where
