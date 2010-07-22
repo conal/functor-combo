@@ -41,7 +41,7 @@ type Unit = Const ()
 
 -- From Control.Compose:
 -- 
---   data Id a = Id a
+--   newtype Id a = Id a
 
 -- | Product on unary type constructors
 data (f :*: g) a = f a :*: g a deriving (Show)
