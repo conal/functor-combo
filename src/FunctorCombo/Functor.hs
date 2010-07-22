@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, EmptyDataDecls, StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators, EmptyDataDecls, StandaloneDeriving, DeriveFunctor #-}
 {-# OPTIONS_GHC -Wall #-}
 ----------------------------------------------------------------------
 -- |
