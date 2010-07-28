@@ -12,7 +12,7 @@
 -- Filling and extracting derivatives (one-hole contexts)
 ----------------------------------------------------------------------
 
-module FunctorCombo.Holey (Loc,Holey(..)) where
+module FunctorCombo.Holey (Loc,Holey(..),fill') where
 
 import Control.Arrow (first,second)
 
@@ -32,6 +32,10 @@ class Functor f => Holey f where
   fill    :: Loc f a -> f a             -- ^ Fill a hole
   extract :: f a -> f (Loc f a)         -- ^ All extractions
 
+-- | Alternative interface for 'fill'.
+fill' :: Holey f => Der f a -> a -> f a
+fill' = curry fill
+
 -- The Functor constraint simplifies several signatures below.
 
 instance Holey (Const z) where
@@ -42,11 +46,16 @@ instance Holey Id where
   fill (Const (), a) = Id a
   extract (Id a) = Id (Const (), a)
 
+-- fill' unit == Id
+
 instance (Holey f, Holey g) => Holey (f :+: g) where
   fill (InL df, a) = InL (fill (df, a))
   fill (InR df, a) = InR (fill (df, a))
   extract (InL fa) = InL ((fmap.first) InL (extract fa))
   extract (InR ga) = InR ((fmap.first) InR (extract ga))
+
+-- fill' (InL df) == InL . fill' df
+-- fill' (InR df) == InR . fill' df
 
 {-
 
@@ -72,6 +81,11 @@ instance (Holey f, Holey g) => Holey (f :*: g) where
   fill (InR ( fa :*: dga), a) = fa :*: fill (dga, a)
   extract (fa :*: ga) = (fmap.first) (InL . (:*: ga)) (extract fa) :*:
                         (fmap.first) (InR . (fa :*:)) (extract ga)
+
+
+
+-- fill' (InL (dfa :*:  ga)) == (:*: ga) . fill' dfa
+-- fill' (InR ( fa :*: dga)) == (fa :*:) . fill' dga
 
 {-
 
@@ -147,11 +161,11 @@ fmap (tweak2 . second extract) (extract gfa)
 -- Der (g :.  f) = Der g :. f  :*:  Der f
 
 instance (Holey f, Holey g) => Holey (g :. f) where
-  -- fill (O dgfa :*: dfa) = O . fill dgfa . fill dfa
   fill (O dgfa :*: dfa, a) = O (fill (dgfa, fill (dfa, a)))
   -- extract (O gfa) = O (extractGF gfa)
   extract = inO extractGF
 
+-- fill' (O dgfa :*: dfa) == O. fill' dgfa . fill' dfa
 
 {-
 O dgfa :*: dfa :: Der (g :. f) a

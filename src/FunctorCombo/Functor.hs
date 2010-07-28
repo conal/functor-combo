@@ -14,8 +14,9 @@
 
 module FunctorCombo.Functor
   (
-    Const(..),Void,Unit,Id(..),unId,inId,inId2,(:+:)(..),eitherF
+    Const(..),Void,Unit,unit,Id(..),unId,inId,inId2,(:+:)(..),eitherF
   , (:*:)(..),(:.)(..),unO,inO,inO2,(~>)
+  , pairF, unPairF, inProd, inProd2
   ) where
 
 
@@ -38,6 +39,10 @@ data Void a
 
 -- | Unit type constructor (one inhabitant)
 type Unit = Const ()
+
+-- | The unit value
+unit :: Unit
+unit = Const ()
 
 -- From Control.Compose:
 -- 
@@ -64,6 +69,16 @@ eitherF _ q (InR ga) = q ga
 
 instance Functor Void where
   fmap _ = error "Void fmap: no void value"  -- so ghc won't complain
+
+-- deriving instance Functor Void
+-- 
+-- Leads to
+-- 
+-- ghc: panic! (the 'impossible' happened)
+--   (GHC version 6.12.1 for i386-apple-darwin):
+-- 	TcPat.checkArgs
+
+
 
 -- instance Functor Id where
 --   fmap h (Id a) = Id (h a)
@@ -110,3 +125,26 @@ instance (Applicative f, Applicative g) => Applicative (f :*: g) where
 -- or
 
 -- deriving instance (Functor g, Functor f) => Functor (g :. f)
+
+
+{--------------------------------------------------------------------
+    Some handy structural manipulators
+--------------------------------------------------------------------}
+
+pairF :: (f a, g a) -> (f :*: g) a
+pairF (fa , ga) = (fa :*: ga)
+
+-- pairF = uncurry (:*:)
+
+unPairF :: (f :*: g) a -> (f a, g a)
+unPairF (fa :*: ga) = (fa , ga)
+
+-- Could also define curryF, uncurryF
+
+inProd :: ((f a , g a) -> (h b , i b)) -> ((f :*: g) a -> (h :*: i) b)
+inProd = unPairF ~> pairF
+
+
+inProd2 :: ((f a , g a) -> (h b , i b) -> (j c , k c))
+        -> ((f :*: g) a -> (h :*: i) b -> (j :*: k) c)
+inProd2 = unPairF ~> inProd

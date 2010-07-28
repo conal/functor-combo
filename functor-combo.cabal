@@ -27,9 +27,10 @@ Package-Url:         http://code.haskell.org/~conal/code/functor-combo
 Library
   hs-Source-Dirs:      src
   Extensions:
-  Build-Depends:       base<5, TypeCompose >= 0.8, containers, data-inttrie
+  Build-Depends:       base<5, TypeCompose >= 0.8, containers, data-inttrie, lub
   Exposed-Modules:     
                        FunctorCombo.Functor
+                       FunctorCombo.Lub
                        FunctorCombo.Derivative
                        FunctorCombo.Holey
                        FunctorCombo.DHoley
