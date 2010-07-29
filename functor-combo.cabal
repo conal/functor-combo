@@ -37,7 +37,11 @@ Library
                        FunctorCombo.FixC
                        FunctorCombo.Regular
                        FunctorCombo.LocT
-                       FunctorCombo.MemoTrie
+                       FunctorCombo.StrictMemo
+                       FunctorCombo.NonstrictMemo
   ghc-options:         -Wall
+
+--                       FunctorCombo.MemoTrie
+
 
 --  ghc-prof-options:    -prof -auto-all 
