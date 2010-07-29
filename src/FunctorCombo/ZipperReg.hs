@@ -14,7 +14,7 @@
 
 module FunctorCombo.ZipperReg
   (
-    Context,Location, up, up', down
+    Context,Zipper, up, up', down
   ) where
 
 
@@ -31,7 +31,7 @@ import FunctorCombo.Regular
 -- 
 --   type Context t = [Der (PF t) t]
 -- 
---   type Location t = (Context t, t)
+--   type Zipper t = (Context t, t)
 -- 
 -- Then use with some standard recursive data types like lists & trees.
 
@@ -44,20 +44,20 @@ import FunctorCombo.Regular
 -- | Context for a regular type
 type Context t = [Der (PF t) t]
 
--- | Location for a regular type -- a zipper
-type Location t = (Context t, t)
+-- | Zipper for a regular type.  Also called \"location\"
+type Zipper t = (Context t, t)
 
 -- | Move upward.  Error if empty context.
-up :: (Regular t, Holey (PF t)) => Location t -> Location t
+up :: (Regular t, Holey (PF t)) => Zipper t -> Zipper t
 up ([]   , _) = error "up: given empty context"
 up (d:ds', t) = (ds', wrap (fill (d,t)))
 
 -- | Variant of 'up'.  'Nothing' if empty context.
-up' :: (Regular t, Holey (PF t)) => Location t -> Maybe (Location t)
+up' :: (Regular t, Holey (PF t)) => Zipper t -> Maybe (Zipper t)
 up' ([]   , _) = Nothing
 up' l          = Just (up l)
 
-down :: (Regular t, Holey (PF t)) => Location t -> PF t (Location t)
+down :: (Regular t, Holey (PF t)) => Zipper t -> PF t (Zipper t)
 down (ds', t) = fmap (first (:ds')) (extract (unwrap t))
 
 {-

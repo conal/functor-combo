@@ -12,7 +12,7 @@
 -- Zippers for functor fixpoints
 ----------------------------------------------------------------------
 
-module FunctorCombo.ZipperFix (Context,Location, up,up',down) where
+module FunctorCombo.ZipperFix (Context,Zipper, up,up',down) where
 
 import Control.Arrow (first)
 
@@ -51,24 +51,24 @@ type Context f = [Der f (Fix f)]
 
 -- Instead,
 
--- | Location in a functor tree -- a zipper
-type Location f = (Context f, Fix f)
+-- | Zipper for a functor tree.  Also called \"location\"
+type Zipper f = (Context f, Fix f)
 
--- TODO: can I relate Context to Der (Fix f) and use Loc for Location?
+-- TODO: can I relate Context to Der (Fix f) and use Loc for Zipper?
 
 -- | Move upward.  Error if empty context.
-up :: Holey f => Location f -> Location f
+up :: Holey f => Zipper f -> Zipper f
 up ([]   , _) = error "up: given empty context"
 up (d:ds', t) = (ds', Fix (fill (d,t)))
 
 -- | Variant of 'up'.  'Nothing' if empty context.
-up' :: Holey f => Location f -> Maybe (Location f)
+up' :: Holey f => Zipper f -> Maybe (Zipper f)
 up' ([]   , _) = Nothing
 up' l          = Just (up l)
 
 {-
 
-(d:ds', t) :: Location f
+(d:ds', t) :: Zipper f
 (d:ds', t) :: (Context f, Fix f)
 
 d:ds' :: [Der f (Fix f)]
@@ -86,7 +86,7 @@ Fix (fill (d,t)) :: Fix f
 
 -}
 
-down :: Holey f => Location f -> f (Location f)
+down :: Holey f => Zipper f -> f (Zipper f)
 down (ds', t) = fmap (first (:ds')) (extract (unFix t))
 
 -- down (ds', t) = fmap (\ (d,t') -> (d:ds',t')) (extract (unFix t))
@@ -94,7 +94,7 @@ down (ds', t) = fmap (first (:ds')) (extract (unFix t))
 
 
 {-
-(ds',t) :: Location f
+(ds',t) :: Zipper f
 (ds',t) :: (Context f, Fix f)
 (ds',t) :: ([Der f (Fix f)], Fix f)
 
@@ -107,5 +107,5 @@ extract (unFix t) :: f (Der f (Fix f), Fix f)
 fmap (\ (d,t') -> (d:ds',t')) (extract (unFix t))
   :: ([Der f (Fix f)], Fix f)
   :: (Context f, Fix f)
-  :: Location f
+  :: Zipper f
 -}
