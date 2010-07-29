@@ -131,6 +131,7 @@ tweak2 = (fmap.first) chainRule . tweak1
 -- 
 -- tweak2 :: Functor f => (Der g (f a), f (Loc f a)) -> f (((Der g :. f) :*: Der f) a, a)
 -- tweak2 :: Functor f => (Der g (f a), f (Loc f a)) -> f (Der (g :. f) a, a)
+-- tweak2 :: Functor f => (Der g (f a), f (Loc f a)) -> f (Loc (g :. f) a)
 
 {-
 (dg fa, f (dfa,a))
@@ -153,7 +154,7 @@ extract gfa :: g (Der g (f a), f a)
 fmap (second extract) (extract gfa) :: g (Der g (f a), f (Loc f a))
 
 fmap (tweak2 . second extract) (extract gfa) 
-  :: g (f ((Der (g :. f :*: Der f) a), a))
+  :: g (f (Loc (g :. f)) a)
 
 -}
 
@@ -163,6 +164,7 @@ instance (Holey f, Holey g) => Holey (g :. f) where
   type Der (g :.  f) = Der g :. f  :*:  Der f
   fillC (O dgfa :*: dfa) = O. fillC dgfa . fillC dfa
   extract = inO extractGF
+  -- extract (O gfa) = O (extractGF gfa)
 
 
 {-

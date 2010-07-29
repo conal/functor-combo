@@ -14,7 +14,7 @@
 
 module FunctorCombo.LocT
   (
-    Context,LocT, up, down
+    Context,LocT, up, up', down
   ) where
 
 
@@ -42,14 +42,21 @@ import FunctorCombo.Regular
 
 -- TODO: rename wrap/unwrap, e.g., to reg/unreg
 
+-- | Context for a regular type
 type Context t = [Der (PF t) t]
 
+-- | Location for a regular type -- a zipper
 type LocT t = (Context t, t)
 
-up :: (Regular t, Holey (PF t)) => LocT t -> Maybe (LocT t)
-up ([],_) = Nothing
-up (d:ds', t) = Just (ds', wrap (fill (d,t)))
+-- | Move upward.  Error if empty context.
+up :: (Regular t, Holey (PF t)) => LocT t -> LocT t
+up ([]   , _) = error "up: given empty context"
+up (d:ds', t) = (ds', wrap (fill (d,t)))
 
+-- | Variant of 'up'.  'Nothing' if empty context.
+up' :: (Regular t, Holey (PF t)) => LocT t -> Maybe (LocT t)
+up' ([]   , _) = Nothing
+up' l          = Just (up l)
 
 down :: (Regular t, Holey (PF t)) => LocT t -> PF t (LocT t)
 down (ds', t) = fmap (first (:ds')) (extract (unwrap t))

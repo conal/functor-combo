@@ -12,7 +12,7 @@
 -- Zippers for functor fixpoints
 ----------------------------------------------------------------------
 
-module FunctorCombo.FixC (FixC,LocFix, up,down) where
+module FunctorCombo.FixC (FixC,LocFix, up,up',down) where
 
 import Control.Arrow (first)
 
@@ -42,6 +42,8 @@ newtype Fix f = Fix { unFix :: f (Fix f) }
 
 -- Isomorphically:
 
+
+-- | Context for a regular type
 type FixC f = [Der f (Fix f)]
 
 -- Reminder:
@@ -50,13 +52,20 @@ type FixC f = [Der f (Fix f)]
 
 -- Instead,
 
+-- | Location in a functor tree -- a zipper
 type LocFix f = (FixC f, Fix f)
 
 -- TODO: can I relate FixC to Der (Fix f) and use Loc for LocFix?
 
-up :: Holey f => LocFix f -> Maybe (LocFix f)
-up ([]   , _) = Nothing
-up (d:ds', t) = Just (ds', Fix (fill (d,t)))
+-- | Move upward.  Error if empty context.
+up :: Holey f => LocFix f -> LocFix f
+up ([]   , _) = error "up: given empty context"
+up (d:ds', t) = (ds', Fix (fill (d,t)))
+
+-- | Variant of 'up'.  'Nothing' if empty context.
+up' :: Holey f => LocFix f -> Maybe (LocFix f)
+up' ([]   , _) = Nothing
+up' l          = Just (up l)
 
 {-
 
