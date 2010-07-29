@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wall #-}
 ----------------------------------------------------------------------
 -- |
--- Module      :  FunctorCombo.LocT
+-- Module      :  FunctorCombo.ZipperReg
 -- Copyright   :  (c) Conal Elliott 2010
 -- License     :  BSD3
 -- 
@@ -12,9 +12,9 @@
 -- 
 ----------------------------------------------------------------------
 
-module FunctorCombo.LocT
+module FunctorCombo.ZipperReg
   (
-    Context,LocT, up, up', down
+    Context,Location, up, up', down
   ) where
 
 
@@ -24,7 +24,6 @@ import Control.Arrow (first)
 -- import FunctorCombo.Holey
 
 import FunctorCombo.DHoley
-
 import FunctorCombo.Regular
 
 -- TODO: Bring in pattern functors (as in PolyP), so I don't have to
@@ -32,7 +31,7 @@ import FunctorCombo.Regular
 -- 
 --   type Context t = [Der (PF t) t]
 -- 
---   type LocT t = (Context t, t)
+--   type Location t = (Context t, t)
 -- 
 -- Then use with some standard recursive data types like lists & trees.
 
@@ -46,19 +45,19 @@ import FunctorCombo.Regular
 type Context t = [Der (PF t) t]
 
 -- | Location for a regular type -- a zipper
-type LocT t = (Context t, t)
+type Location t = (Context t, t)
 
 -- | Move upward.  Error if empty context.
-up :: (Regular t, Holey (PF t)) => LocT t -> LocT t
+up :: (Regular t, Holey (PF t)) => Location t -> Location t
 up ([]   , _) = error "up: given empty context"
 up (d:ds', t) = (ds', wrap (fill (d,t)))
 
 -- | Variant of 'up'.  'Nothing' if empty context.
-up' :: (Regular t, Holey (PF t)) => LocT t -> Maybe (LocT t)
+up' :: (Regular t, Holey (PF t)) => Location t -> Maybe (Location t)
 up' ([]   , _) = Nothing
 up' l          = Just (up l)
 
-down :: (Regular t, Holey (PF t)) => LocT t -> PF t (LocT t)
+down :: (Regular t, Holey (PF t)) => Location t -> PF t (Location t)
 down (ds', t) = fmap (first (:ds')) (extract (unwrap t))
 
 {-
