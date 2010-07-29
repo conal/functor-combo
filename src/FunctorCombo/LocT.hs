@@ -18,6 +18,8 @@ module FunctorCombo.LocT
   ) where
 
 
+import Control.Arrow (first)
+
 -- import FunctorCombo.Derivative
 -- import FunctorCombo.Holey
 
@@ -44,13 +46,13 @@ type Context t = [Der (PF t) t]
 
 type LocT t = (Context t, t)
 
-up :: (Regular t, Holey (PF t)) => LocT t -> LocT t
-up ([],_) = error "up: already at top"
-up (d:ds', t) = (ds', wrap (fill (d,t)))
+up :: (Regular t, Holey (PF t)) => LocT t -> Maybe (LocT t)
+up ([],_) = Nothing
+up (d:ds', t) = Just (ds', wrap (fill (d,t)))
 
 
 down :: (Regular t, Holey (PF t)) => LocT t -> PF t (LocT t)
-down (ds', t) = fmap (\ (d,t') -> (d:ds',t')) (extract (unwrap t))
+down (ds', t) = fmap (first (:ds')) (extract (unwrap t))
 
 {-
 

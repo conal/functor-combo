@@ -14,6 +14,8 @@
 
 module FunctorCombo.FixC (FixC,LocFix, up,down) where
 
+import Control.Arrow (first)
+
 -- import FunctorCombo.Derivative
 -- import FunctorCombo.Holey
 
@@ -52,9 +54,9 @@ type LocFix f = (FixC f, Fix f)
 
 -- TODO: can I relate FixC to Der (Fix f) and use Loc for LocFix?
 
-up :: Holey f => LocFix f -> LocFix f
-up ([],_) = error "up: already at top"
-up (d:ds', t) = (ds', Fix (fill (d,t)))
+up :: Holey f => LocFix f -> Maybe (LocFix f)
+up ([]   , _) = Nothing
+up (d:ds', t) = Just (ds', Fix (fill (d,t)))
 
 {-
 
@@ -77,7 +79,11 @@ Fix (fill (d,t)) :: Fix f
 -}
 
 down :: Holey f => LocFix f -> f (LocFix f)
-down (ds', t) = fmap (\ (d,t') -> (d:ds',t')) (extract (unFix t))
+down (ds', t) = fmap (first (:ds')) (extract (unFix t))
+
+-- down (ds', t) = fmap (\ (d,t') -> (d:ds',t')) (extract (unFix t))
+
+
 
 {-
 (ds',t) :: LocFix f

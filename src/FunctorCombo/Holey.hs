@@ -12,7 +12,7 @@
 -- Filling and extracting derivatives (one-hole contexts)
 ----------------------------------------------------------------------
 
-module FunctorCombo.Holey (Loc,Holey(..),fill') where
+module FunctorCombo.Holey (Loc,Holey(..),fill) where
 
 import Control.Arrow (first,second)
 
@@ -27,35 +27,42 @@ import FunctorCombo.Derivative
 -- | Location, i.e., one-hole context and a value for the hole.
 type Loc f a = (Der f a, a)
 
+-- | Alternative interface for 'fillC'.
+fill :: Holey f => Loc f a -> f a
+fill = uncurry fillC
+
 -- | Filling and creating one-hole contexts
 class Functor f => Holey f where
-  fill    :: Loc f a -> f a             -- ^ Fill a hole
+  fillC    :: Der f a -> a -> f a        -- ^ Fill a hole
   extract :: f a -> f (Loc f a)         -- ^ All extractions
-
--- | Alternative interface for 'fill'.
-fill' :: Holey f => Der f a -> a -> f a
-fill' = curry fill
 
 -- The Functor constraint simplifies several signatures below.
 
 instance Holey (Const z) where
-  fill = error "fill for Const z: no Der values"
+  fillC = voidF
   extract (Const z) = Const z
 
 instance Holey Id where
-  fill (Const (), a) = Id a
+  fillC (Const ()) = Id
   extract (Id a) = Id (Const (), a)
 
--- fill' unit == Id
+-- fillC (Const ()) a = Id a
+
+-- fill (Const (), a) = Id a
 
 instance (Holey f, Holey g) => Holey (f :+: g) where
-  fill (InL df, a) = InL (fill (df, a))
-  fill (InR df, a) = InR (fill (df, a))
+  fillC (InL df) = InL . fillC df
+  fillC (InR df) = InR . fillC df
   extract (InL fa) = InL ((fmap.first) InL (extract fa))
   extract (InR ga) = InR ((fmap.first) InR (extract ga))
 
--- fill' (InL df) == InL . fill' df
--- fill' (InR df) == InR . fill' df
+-- fillC (InL df) a) = InL (fillC df a)
+-- fillC (InR df) a) = InR (fillC df a)
+
+-- fill (InL df, a) = InL (fill (df, a))
+-- fill (InR df, a) = InR (fill (df, a))
+
+--   fillC = eitherF ((result.result) InL fillC) ((result.result) InR fillC)
 
 {-
 
@@ -77,15 +84,17 @@ InL ((fmap.first) InL (extract fa)) :: (f :+: g) ((Der (f :+: g) a), a)
 -- Der (f :*: g) = Der f :*: g  :+:  f :*: Der g
 
 instance (Holey f, Holey g) => Holey (f :*: g) where
-  fill (InL (dfa :*:  ga), a) = fill (dfa, a) :*: ga
-  fill (InR ( fa :*: dga), a) = fa :*: fill (dga, a)
+  fillC (InL (dfa :*:  ga)) = (:*: ga) . fillC dfa
+  fillC (InR ( fa :*: dga)) = (fa :*:) . fillC dga
   extract (fa :*: ga) = (fmap.first) (InL . (:*: ga)) (extract fa) :*:
                         (fmap.first) (InR . (fa :*:)) (extract ga)
 
+-- fillC (InL (dfa :*:  ga)) a = fillC dfa a :*: ga
+-- fillC (InR ( fa :*: dga)) a = fa :*: fillC dga a
 
+-- fill (InL (dfa :*:  ga), a) = fill (dfa, a) :*: ga
+-- fill (InR ( fa :*: dga), a) = fa :*: fill (dga, a)
 
--- fill' (InL (dfa :*:  ga)) == (:*: ga) . fill' dfa
--- fill' (InR ( fa :*: dga)) == (fa :*:) . fill' dga
 
 {-
 
@@ -161,11 +170,13 @@ fmap (tweak2 . second extract) (extract gfa)
 -- Der (g :.  f) = Der g :. f  :*:  Der f
 
 instance (Holey f, Holey g) => Holey (g :. f) where
-  fill (O dgfa :*: dfa, a) = O (fill (dgfa, fill (dfa, a)))
+  fillC (O dgfa :*: dfa) = O. fillC dgfa . fillC dfa
+  -- fillC (O dgfa :*: dfa) a = O (fillC dgfa (fillC dfa a))
   -- extract (O gfa) = O (extractGF gfa)
   extract = inO extractGF
 
--- fill' (O dgfa :*: dfa) == O. fill' dgfa . fill' dfa
+-- fill (O dgfa :*: dfa, a) = O (fill (dgfa, fill (dfa, a)))
+
 
 {-
 O dgfa :*: dfa :: Der (g :. f) a
@@ -175,10 +186,10 @@ O dgfa :*: dfa :: (Der g :. f :*: Der f) a
 dgfa :: Der g (f a)
 dfa  :: Der f a
 
-fill dfa a :: f a
+fillC dfa a :: f a
 
-fill dgfa (fill dfa a) :: g (f a)
+fillC dgfa (fillC dfa a) :: g (f a)
 
-O (fill dgfa (fill dfa a)) :: (g :. f) a
+O (fillC dgfa (fillC dfa a)) :: (g :. f) a
 
 -}

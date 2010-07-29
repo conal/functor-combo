@@ -14,7 +14,7 @@
 
 module FunctorCombo.Functor
   (
-    Const(..),Void,Unit,unit,Id(..),unId,inId,inId2,(:+:)(..),eitherF
+    Const(..),Void,voidF,Unit,unit,Id(..),unId,inId,inId2,(:+:)(..),eitherF
   , (:*:)(..),(:.)(..),unO,inO,inO2,(~>)
   , pairF, unPairF, inProd, inProd2
   ) where
@@ -37,11 +37,15 @@ infixl 6 :+:
 -- | Empty/zero type constructor (no inhabitants)
 data Void a
 
+voidF :: Void a -> b
+voidF = error "voidF: no value of type Void"
+
+
 -- | Unit type constructor (one inhabitant)
 type Unit = Const ()
 
 -- | The unit value
-unit :: Unit
+unit :: Unit ()
 unit = Const ()
 
 -- From Control.Compose:
@@ -77,7 +81,11 @@ instance Functor Void where
 -- ghc: panic! (the 'impossible' happened)
 --   (GHC version 6.12.1 for i386-apple-darwin):
 -- 	TcPat.checkArgs
-
+-- 
+-- See ticket <http://hackage.haskell.org/trac/ghc/ticket/4220>.
+-- 
+-- TODO: replace explicit definition with deriving, when the compiler fix
+-- has been around for a while.
 
 
 -- instance Functor Id where
