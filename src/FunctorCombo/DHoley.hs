@@ -111,7 +111,7 @@ extract fa :: f (Loc f a)
 
 -- type instance Der (g :.  f) = Der g :. f  :*:  Der f
 
-
+{-
 lassoc :: (p,(q,r)) -> ((p,q),r)
 lassoc    (p,(q,r)) =  ((p,q),r)
 
@@ -126,6 +126,21 @@ chainRule (dgfa, dfa) = O dgfa :*: dfa
 
 tweak2 :: Functor f => (dg (f a), f (df a, a)) -> f (((dg :. f) :*: df) a, a)
 tweak2 = (fmap.first) chainRule . tweak1
+-}
+
+-- Sjoerd Visscher wrote <http://conal.net/blog/posts/another-angle-on-zippers/#comment-51328>:
+
+-- At first it was a bit disappointing that extract is so complicated for
+-- functor composition, but I played a bit with the code and tweak2 can be
+-- simplified (if I didn’t make a mistake) to:
+
+-- tweak2 (dgfa, fl) = (fmap.first) (O dgfa :*:) fl
+
+-- It’s interesting that (tweak2 . second extract) is very much like down!
+-- Probably because Fix f is like repeated functor composition of f.
+
+tweak2 :: Functor f => (dg (f a), f (df a, a)) -> f (((dg :. f) :*: df) a, a)
+tweak2 (dgfa, fl) = (fmap.first) (O dgfa :*:) fl
 
 -- And more specifically,
 -- 

@@ -58,7 +58,7 @@ up' ([]   , _) = Nothing
 up' l          = Just (up l)
 
 down :: (Regular t, Holey (PF t)) => Zipper t -> PF t (Zipper t)
-down (ds', t) = fmap (first (:ds')) (extract (unwrap t))
+down (ds', t) = (fmap.first) (:ds') (extract (unwrap t))
 
 {-
 

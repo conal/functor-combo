@@ -87,7 +87,7 @@ Fix (fill (d,t)) :: Fix f
 -}
 
 down :: Holey f => Zipper f -> f (Zipper f)
-down (ds', t) = fmap (first (:ds')) (extract (unFix t))
+down (ds', t) = (fmap.first) (:ds') (extract (unFix t))
 
 -- down (ds', t) = fmap (\ (d,t') -> (d:ds',t')) (extract (unFix t))
 
@@ -104,7 +104,7 @@ unFix t :: f (Fix f)
 
 extract (unFix t) :: f (Der f (Fix f), Fix f)
 
-fmap (\ (d,t') -> (d:ds',t')) (extract (unFix t))
+(fmap.first) (:ds') (extract (unFix t))
   :: ([Der f (Fix f)], Fix f)
   :: (Context f, Fix f)
   :: Zipper f
