@@ -16,6 +16,7 @@ module FunctorCombo.Functor
   (
     Const(..),Void,voidF,Unit,unit,Id(..),unId,inId,inId2,(:+:)(..),eitherF
   , (:*:)(..),(:.)(..),unO,inO,inO2,(~>)
+  , Lift(..), (:*:!)(..), (:+:!)(..), eitherF'
   , pairF, unPairF, inProd, inProd2
   ) where
 
@@ -53,10 +54,10 @@ unit = Const ()
 --   newtype Id a = Id a
 
 -- | Product on unary type constructors
-data (f :*: g) a = f a :*: g a deriving (Show)
+data (f :*: g) a = f a :*: g a deriving (Show,Functor)
 
 -- | Sum on unary type constructors
-data (f :+: g) a = InL (f a) | InR (g a) deriving (Show)
+data (f :+: g) a = InL (f a) | InR (g a) deriving (Show,Functor)
 
 eitherF :: (f a -> b) -> (g a -> b) -> (f :+: g) a -> b
 eitherF p _ (InL fa) = p fa
@@ -102,13 +103,13 @@ instance Functor Void where
 --     fmap h . InL  ==  InL . fmap h
 --     fmap h . InR  ==  InR . fmap h
 
-deriving instance (Functor f, Functor g) => Functor (f :+: g)
+-- deriving instance (Functor f, Functor g) => Functor (f :+: g)
 
 -- instance (Functor f, Functor g) => Functor (f :*: g) where
 --   fmap h (fa :*: ga) = fmap h fa :*: fmap h ga
 
 -- Or:
-deriving instance (Functor f, Functor g) => Functor (f :*: g)
+-- deriving instance (Functor f, Functor g) => Functor (f :*: g)
 
 -- TODO: Verify that the deriving instances are equivalent to the explicit versions.
 
@@ -156,3 +157,43 @@ inProd = unPairF ~> pairF
 inProd2 :: ((f a , g a) -> (h b , i b) -> (j c , k c))
         -> ((f :*: g) a -> (h :*: i) b -> (j :*: k) c)
 inProd2 = unPairF ~> inProd
+
+
+{--------------------------------------------------------------------
+    Explicit non-strictness
+--------------------------------------------------------------------}
+
+-- Idea: make all non-strictness explicit via unlifted product & sums,
+-- and explicit lifting.  Note that Id and Const are already strict.
+
+-- | Add a bottom to a type
+data Lift a = Lift { unLift :: a } deriving Functor
+
+infixl 6 :+:!
+infixl 7 :*:!
+
+-- | Strict product functor
+
+-- data (f :*:! g) a = (:*:!) { pfst :: !(f a), psnd :: !(g a) } deriving Functor
+
+data (f :*:! g) a = !(f a) :*:! !(g a) deriving Functor
+
+-- pfst :: (f :*:! g) a -> f a
+-- pfst (fa :*:! _) = fa
+
+-- psnd :: (f :*:! g) a -> g a
+-- psnd (_ :*:! ga) = ga
+
+-- t1 :: Id Int
+-- t1 = psnd (undefined :*:! Id 3)   -- *** Id Exception: Prelude.undefined
+
+-- t1 :: Id Int
+-- t1 = x where x :*:! _ = undefined :*:! Id 3   -- *** Id Exception: Prelude.undefined
+
+-- | Strict sum functor
+data (f :+:! g) a = InL' !(f a) | InR' !(g a) deriving Functor
+
+-- | Case analysis on strict sum functor
+eitherF' :: (f a -> c) -> (g a -> c) -> ((f :+:! g) a -> c)
+eitherF' p _ (InL' fa) = p fa
+eitherF' _ q (InR' ga) = q ga

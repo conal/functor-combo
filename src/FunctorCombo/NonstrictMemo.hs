@@ -2,8 +2,8 @@
            , DeriveFunctor, StandaloneDeriving
            , FlexibleContexts
  #-}
-{-# OPTIONS_GHC -Wall #-}
-{-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-unused-imports #-}  -- temporary while testing
+{-# OPTIONS_GHC -Wall -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-unused-imports #-}  -- TEMP
 ----------------------------------------------------------------------
 -- |
 -- Module      :  FunctorCombo.NonstrictMemo
@@ -13,8 +13,8 @@
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
 -- 
--- Functor-based memo tries
--- 
+-- Functor-based memo tries.  See
+-- <http://conal.net/blog/posts/details-for-nonstrict-memoization-part-1/>
 ----------------------------------------------------------------------
 
 module FunctorCombo.NonstrictMemo
@@ -36,6 +36,7 @@ import Control.Compose (result)  -- TypeCompose
 import Data.Lub
 #endif
 
+import FunctorCombo.Strict
 import FunctorCombo.Functor
 import FunctorCombo.Regular
 
@@ -60,7 +61,7 @@ infixr 0 :->:
 
 #ifdef FunctorSuperClass
 
-#define HasTrieContext(Ty) Functor (STrie(Ty))
+#define HasTrieContext(Ty) Functor (STrie (Ty))
 #define HF(Ty) HasTrie (Ty)
 
 #else
@@ -206,6 +207,31 @@ instance (HF(a), HasTrie b) => HasTrie (a , b) where
 -- 
 -- Solution: switch from inner-then-outer to outer-then-inner.
 
+
+-- Experiment: strict sums & pairs.
+-- TODO: re-work non-strict versions in terms of strict ones and Lift
+
+instance (HasTrie a, HasTrie b) => HasTrie (a :+! b) where
+  type STrie (a :+! b) = STrie a :*: STrie b
+  sTrie   f           = sTrie (f . Left') :*: sTrie (f . Right')
+  sUntrie (ta :*: tb) = sUntrie ta `either'` sUntrie tb
+--   enumerate (ta :*: tb) = enum' Left' ta `weave` enum' Right' tb
+
+instance (HF(a), HasTrie b) => HasTrie (a :*! b) where
+  type STrie (a :*! b) = STrie a :. STrie b
+--   sTrie   f = O (trie (trie . curry f))
+--   sUntrie (O tt) = uncurry (untrie . untrie tt)
+  sTrie   f = O (fmap sTrie (sTrie (curry' f)))
+  sUntrie (O tt) = uncurry' (sUntrie (fmap sUntrie tt))
+
+-- Lift a has an additional bottom.  A strict function or trie is
+-- only strict in the lower (outer) one.
+instance (HF(a)) => HasTrie (Lift a) where
+  type STrie (Lift a) = Trie a
+  sTrie   f = trie (f . Lift)
+  sUntrie t = untrie t . unLift
+
+
 #define HasTrieIsomorph(Context,Type,IsoType,toIso,fromIso) \
 instance Context => HasTrie (Type) where { \
   type STrie (Type) = STrie (IsoType); \
@@ -246,6 +272,22 @@ HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
 HasTrieIsomorph( HasTrie (g (f a))
                , (g :. f) a, g (f a) , unO, O )
 
+-- Strict variants
+
+HasTrieIsomorph( ( HF(f a), HasTrie (g a) )
+               , (f :*:! g) a, (f a :*! g a)
+               , \ (fa :*:! ga) -> (fa :*! ga), \ (fa :*! ga) -> (fa :*:! ga) )
+
+HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
+               , (f :+:! g) a, (f a :+! g a)
+               , fToSum, sumToF)
+
+-- Factored out to avoid clash between primes and GHC's use of classic CPP
+sumToF :: (f a :+! g a) -> (f :+:! g) a
+sumToF = either' InL' InR'
+
+fToSum :: (f :+:! g) a -> (f a :+! g a)
+fToSum = eitherF' Left' Right'
 
 newtype ListSTrie a v = ListSTrie (PF [a] [a] :-> v)
  
@@ -257,9 +299,10 @@ instance (HF(a)) => HasTrie [a] where
   sUntrie (ListSTrie t) = sUntrie t . unwrap
   -- enumerate (ListSTrie t) = (result.fmap.first) wrap enumerate $ t
 
--- Compiles fine, but has many points of undefinedness than a list does.
+-- Compiles fine, but has many points of undefinedness than a list does.  See
+-- <http://conal.net/blog/posts/details-for-nonstrict-memoization-part-1/>
+-- 
 -- Experiment with some alternatives.
-
 
 
 -- Now a trie for ListSTrie a v.  Use the isomorphism with PF [a] [a] :-> v
@@ -353,10 +396,6 @@ STrie (Either (Unit [a]) ((Const a :*: Id) [a])) v
 
 -}
 
-
-
-{-
-
 -- Now abstract into a macro
 
 #define HasTrieRegular(Context,Type,TrieType,TrieCon) \
@@ -396,27 +435,58 @@ HasTrieRegular(HasTrie a, TypeCon a, TrieCon a, TrieCon)
 --                , \ (ListSTrie w) -> w, ListSTrie )
 
 
-enumerateEnum :: (Enum k, Num k, HasTrie k) => (k :->: v) -> [(k,v)]
-enumerateEnum t = [(k, f k) | k <- [0 ..] `weave` [-1, -2 ..]]
- where
-   f = untrie t
+-- enumerateEnum :: (Enum k, Num k, HasTrie k) => (k :->: v) -> [(k,v)]
+-- enumerateEnum t = [(k, f k) | k <- [0 ..] `weave` [-1, -2 ..]]
+--  where
+--    f = untrie t
 
 #define HasTrieIntegral(Type) \
 instance HasTrie Type where { \
   type STrie Type = IT.IntTrie; \
   sTrie   = (<$> IT.identity); \
   sUntrie = IT.apply; \
-  enumerate = enumerateEnum; \
 }
+  -- enumerate = enumerateEnum;
 
 HasTrieIntegral(Int)
 HasTrieIntegral(Integer)
 
-
 -- Memoizing higher-order functions
 
-HasTrieIsomorph((HasTrie a, HasTrie (a :->: b)), a -> b, a :->: b, trie, untrie)
+HasTrieIsomorph((HasTrie a, HasTrie (a :->: b), HasLub b)
+               ,a -> b, a :->: b, trie, untrie)
 
+
+{--------------------------------------------------------------------
+    Regular instances.
+--------------------------------------------------------------------}
+
+-- Re-think where to put these instances.  I want different versions for
+-- list, depending on whether I'm taking care with bottoms.
+
+instance Regular [a] where
+  type PF [a] = Unit :+:! Const (Lift a) :*:! Lift
+  unwrap []     = InL' (Const ())
+  unwrap (a:as) = InR' (Const (Lift a) :*:! Lift as)
+  wrap (InL' (Const ()))            = []
+  wrap (InR' (Const (Lift a) :*:! Lift as)) = a:as
+
+-- Rose tree (from Data.Tree)
+-- 
+--   data Tree  a = Node a [Tree a]
+
+-- instance Functor Tree where
+--   fmap f (Node a ts) = Node (f a) (fmap f ts)
+
+instance Regular (Tree a) where
+  type PF (Tree a) = Const a :*: []
+  unwrap (Node a ts) = Const a :*: ts
+  wrap (Const a :*: ts) = Node a ts
+
+-- Note that we're using the non-strict pairing functor.
+-- Does PF (Tree a) have the right strictness?
+-- I think so, since a tree can be either _|_ or Node applied to a
+-- possibly-_|_ value and a possibly-_|_ list.
 
 {-
 
@@ -436,6 +506,8 @@ fib m = mfib m
 
 
 -}
+
+{-
 
 ft1 :: (Bool -> a) -> [a]
 ft1 f = [f False, f True]

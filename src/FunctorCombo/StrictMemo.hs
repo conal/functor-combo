@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeOperators, TypeFamilies, UndecidableInstances, CPP
            , FlexibleContexts, DeriveFunctor, StandaloneDeriving
  #-}
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-unused-imports #-}  -- temporary while testing
 ----------------------------------------------------------------------
 -- |
@@ -24,11 +24,14 @@ module FunctorCombo.StrictMemo
 import Control.Arrow (first)
 import Control.Applicative ((<$>))
 
+import Data.Tree
+
 import qualified Data.IntTrie as IT  -- data-inttrie
 import Data.Tree
 
 import Control.Compose (result)  -- TypeCompose
 
+-- import FunctorCombo.Strict
 import FunctorCombo.Functor
 import FunctorCombo.Regular
 
@@ -133,6 +136,8 @@ instance (HF(a), HasTrie b) => HasTrie (a , b) where
   enumerate (O tt) =
     [ ((a,b),x) | (a,t) <- enumerate tt , (b,x) <- enumerate t ]
 
+
+
 #define HasTrieIsomorph(Context,Type,IsoType,toIso,fromIso) \
 instance Context => HasTrie (Type) where {\
   type Trie (Type) = Trie (IsoType); \
@@ -154,6 +159,7 @@ HasTrieIsomorph( (HF(a),HF(b),HF(c), HasTrie d)
                , \ (a,b,c,d) -> ((a,b,c),d), \ ((a,b,c),d) -> (a,b,c,d))
 
 
+
 -- As well as the functor combinators themselves
 
 HasTrieIsomorph( HasTrie x, Const x a, x, getConst, Const )
@@ -170,6 +176,7 @@ HasTrieIsomorph( (HasTrie (f a), HasTrie (g a))
 
 HasTrieIsomorph( HasTrie (g (f a))
                , (g :. f) a, g (f a) , unO, O )
+
 
 
 -- newtype ListTrie a v = ListTrie (PF [a] [a] :->: v)
@@ -390,3 +397,28 @@ f2 = length . filter id
 
 -- Would nonstrict memoization work?  <http://conal.net/blog/posts/nonstrict-memoization/>
 
+{--------------------------------------------------------------------
+    Regular instances.
+--------------------------------------------------------------------}
+
+-- Re-think where to put these instances.  I want different versions for
+-- list, depending on whether I'm taking care with bottoms.
+
+instance Regular [a] where
+  type PF [a] = Unit :+: Const a :*: Id
+  unwrap []     = InL (Const ())
+  unwrap (a:as) = InR (Const a :*: Id as)
+  wrap (InL (Const ()))          = []
+  wrap (InR (Const a :*: Id as)) = a:as
+
+-- Rose tree (from Data.Tree)
+-- 
+--   data Tree  a = Node a [Tree a]
+
+-- instance Functor Tree where
+--   fmap f (Node a ts) = Node (f a) (fmap f ts)
+
+instance Regular (Tree a) where
+  type PF (Tree a) = Const a :*: []
+  unwrap (Node a ts) = Const a :*: ts
+  wrap (Const a :*: ts) = Node a ts

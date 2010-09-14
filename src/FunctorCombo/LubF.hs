@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wall -fno-warn-orphans #-}
 ----------------------------------------------------------------------
 -- |
--- Module      :  FunctorCombo.Lub
+-- Module      :  FunctorCombo.LubF
 -- Copyright   :  (c) Conal Elliott 2010
 -- License     :  GPL-3
 -- 
@@ -12,7 +12,7 @@
 -- Least upper bounds for functor combinators
 ----------------------------------------------------------------------
 
-module FunctorCombo.Lub (HasLubF) where
+module FunctorCombo.LubF (HasLubF) where
 
 import Data.Lub
 

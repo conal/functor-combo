@@ -29,8 +29,9 @@ Library
   Extensions:
   Build-Depends:       base<5, TypeCompose >= 0.8, containers, data-inttrie, lub
   Exposed-Modules:     
+                       FunctorCombo.Strict
                        FunctorCombo.Functor
-                       FunctorCombo.Lub
+                       FunctorCombo.LubF
                        FunctorCombo.Derivative
                        FunctorCombo.Holey
                        FunctorCombo.DHoley
