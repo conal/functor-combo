@@ -88,7 +88,6 @@ instance Functor Void where
 -- TODO: replace explicit definition with deriving, when the compiler fix
 -- has been around for a while.
 
-
 -- instance Functor Id where
 --   fmap h (Id a) = Id (h a)
 

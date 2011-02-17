@@ -19,7 +19,7 @@
 
 module FunctorCombo.NonstrictMemo
   (
-    HasTrie(..),memo,memo2,memo3
+    HasTrie(..),(:->:),memo,memo2,memo3
   ) where
 
 #define NonstrictMemo
@@ -221,7 +221,7 @@ instance (HF(a), HasTrie b) => HasTrie (a :*! b) where
   type STrie (a :*! b) = STrie a :. STrie b
 --   sTrie   f = O (trie (trie . curry f))
 --   sUntrie (O tt) = uncurry (untrie . untrie tt)
-  sTrie   f = O (fmap sTrie (sTrie (curry' f)))
+  sTrie   f      = O (fmap sTrie (sTrie (curry' f)))
   sUntrie (O tt) = uncurry' (sUntrie (fmap sUntrie tt))
 
 -- Lift a has an additional bottom.  A strict function or trie is
@@ -253,6 +253,8 @@ HasTrieIsomorph( (HF(a),HF(b), HasTrie c)
 HasTrieIsomorph( (HF(a),HF(b),HF(c), HasTrie d)
                , (a,b,c,d), ((a,b,c),d)
                , \ (a,b,c,d) -> ((a,b,c),d), \ ((a,b,c),d) -> (a,b,c,d))
+
+-- OOPS! Fix the isomorphs above
 
 
 -- As well as the functor combinators themselves

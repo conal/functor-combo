@@ -20,6 +20,8 @@ module FunctorCombo.MemoTrie
     HasTrie(..),memo,memo2,memo3
   ) where
 
+-- I think this module has split into StrictMemo and NonstrictMemo
+
 #define NonstrictMemo
 
 import Control.Arrow (first)

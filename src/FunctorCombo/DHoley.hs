@@ -132,11 +132,11 @@ tweak2 = (fmap.first) chainRule . tweak1
 
 -- At first it was a bit disappointing that extract is so complicated for
 -- functor composition, but I played a bit with the code and tweak2 can be
--- simplified (if I didn’t make a mistake) to:
+-- simplified (if I didn't make a mistake) to:
 
 -- tweak2 (dgfa, fl) = (fmap.first) (O dgfa :*:) fl
 
--- It’s interesting that (tweak2 . second extract) is very much like down!
+-- It's interesting that (tweak2 . second extract) is very much like down!
 -- Probably because Fix f is like repeated functor composition of f.
 
 tweak2 :: Functor f => (dg (f a), f (df a, a)) -> f (((dg :. f) :*: df) a, a)

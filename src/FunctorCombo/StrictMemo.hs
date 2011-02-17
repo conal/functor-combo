@@ -18,7 +18,7 @@
 
 module FunctorCombo.StrictMemo
   (
-    HasTrie(..),memo,memo2,memo3
+    HasTrie(..),(:->:),memo,memo2,memo3
   ) where
 
 import Control.Arrow (first)
@@ -147,8 +147,8 @@ instance Context => HasTrie (Type) where {\
 }
 
 HasTrieIsomorph( (), Bool, Either () ()
-               , bool (Left ()) (Right ())
-               , either (\ () -> True) (\ () -> False))
+               , bool (Right ()) (Left ())
+               , either (\ () -> False) (\ () -> True))
 
 HasTrieIsomorph( (HF(a),HF(b), HasTrie c)
                , (a,b,c), ((a,b),c)
