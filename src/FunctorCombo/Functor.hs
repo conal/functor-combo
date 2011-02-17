@@ -127,6 +127,12 @@ instance (Applicative f, Applicative g) => Applicative (f :*: g) where
   pure a = pure a :*: pure a
   (f :*: g) <*> (a :*: b) = (f <*> a) :*: (g <*> b)
 
+-- instance (Applicative f, Applicative g) => Applicative (f :+: g) where
+--   -- pure = ?? -- could use either 'InL . pure' or 'InR . pure'
+--   InL f <*> InL a = InL (f <*> a)
+--   InR g <*> InR b = InR (g <*> b)
+--   _ <*> _ = error "(<*>) on f :+: g: structural mismatch"
+
 -- instance (Functor g, Functor f) => Functor (g :. f) where
 --   fmap = inO.fmap.fmap
 
