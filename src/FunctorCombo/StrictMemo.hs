@@ -23,6 +23,7 @@ module FunctorCombo.StrictMemo
 
 import Control.Arrow (first)
 import Control.Applicative ((<$>))
+import Data.Foldable (Foldable,toList)
 
 import Data.Tree
 
@@ -69,8 +70,8 @@ class HasTrieContext(k) => HasTrie k where
     trie   :: (k  ->  v) -> (k :->: v)
     -- | Convert k trie to k function, i.e., access k field of the trie
     untrie :: (k :->: v) -> (k  ->  v)
-    -- | List the trie elements.  Order of keys (@:: k@) is always the same.
-    enumerate :: (k :->: v) -> [(k,v)]
+--     -- | List the trie elements.  Order of keys (@:: k@) is always the same.
+--     enumerate :: (k :->: v) -> [(k,v)]
 
 -- -- | Domain elements of a trie
 -- domain :: HasTrie a => [a]
@@ -78,6 +79,17 @@ class HasTrieContext(k) => HasTrie k where
 --  where
 --    oops = error "Data.MemoTrie.domain: range element evaluated."
 
+-- Identity trie. To do: make idTrie the method, and define trie via idTrie.
+idTrie :: HasTrie k => k :->: k
+idTrie = trie id
+
+-- | List the trie elements.  Order of keys (@:: k@) is always the same.
+enumerate :: (Foldable (Trie k), HasTrie k) => (k :->: v) -> [(k,v)]
+enumerate = zip (toList idTrie) . toList
+
+-- TODO: Improve this implementation, using an interface from Edward
+-- Kmett. Something about collections with keys, so that I can efficiently
+-- implement `(k :->: v) -> (k :->: (k,v))`.
 
 
 {--------------------------------------------------------------------
@@ -111,16 +123,16 @@ instance HasTrie () where
   type Trie ()  = Id
   trie   f      = Id (f ())
   untrie (Id v) = const v
-  enumerate (Id a) = [((),a)]
+--   enumerate (Id a) = [((),a)]
 
 instance (HasTrie a, HasTrie b) => HasTrie (Either a b) where
   type Trie (Either a b) = Trie a :*: Trie b
   trie   f           = trie (f . Left) :*: trie (f . Right)
   untrie (ta :*: tb) = untrie ta `either` untrie tb
-  enumerate (ta :*: tb) = enum' Left ta `weave` enum' Right tb
+--   enumerate (ta :*: tb) = enum' Left ta `weave` enum' Right tb
 
-enum' :: (HasTrie a) => (a -> a') -> (a :->: b) -> [(a', b)]
-enum' f = (fmap.first) f . enumerate
+-- enum' :: (HasTrie a) => (a -> a') -> (a :->: b) -> [(a', b)]
+-- enum' f = (fmap.first) f . enumerate
 
 weave :: [a] -> [a] -> [a]
 [] `weave` as = as
@@ -133,8 +145,8 @@ instance (HF(a), HasTrie b) => HasTrie (a , b) where
   trie   f = O (trie (trie . curry f))
   -- untrie (O tt) = uncurry (untrie . untrie tt)
   untrie (O tt) = uncurry (untrie (fmap untrie tt))
-  enumerate (O tt) =
-    [ ((a,b),x) | (a,t) <- enumerate tt , (b,x) <- enumerate t ]
+--   enumerate (O tt) =
+--     [ ((a,b),x) | (a,t) <- enumerate tt , (b,x) <- enumerate t ]
 
 
 
@@ -143,8 +155,10 @@ instance Context => HasTrie (Type) where {\
   type Trie (Type) = Trie (IsoType); \
   trie f = trie (f . (fromIso)); \
   untrie t = untrie t . (toIso); \
-  enumerate = (result.fmap.first) (fromIso) enumerate; \
 }
+
+--  enumerate = (result.fmap.first) (fromIso) enumerate;
+
 
 HasTrieIsomorph( (), Bool, Either () ()
                , bool (Right ()) (Left ())
@@ -260,12 +274,12 @@ instance Context => HasTrie (Type) where { \
   type Trie (Type) = TrieType; \
   trie f = TrieCon (trie (f . wrap)); \
   untrie (TrieCon t) = untrie t . unwrap; \
-  enumerate (TrieCon t) = (result.fmap.first) wrap enumerate t; \
 }; \
 HasTrieIsomorph( HasTrie (PF (Type) (Type) :->: v) \
                , TrieType v, PF (Type) (Type) :->: v \
                , \ (TrieCon w) -> w, TrieCon )
 
+--  enumerate (TrieCon t) = (result.fmap.first) wrap enumerate t; 
 
 
 -- For instance,
@@ -296,18 +310,20 @@ HasTrieRegular1(Tree, TreeTrie)
 
 
 
-enumerateEnum :: (Enum k, Num k, HasTrie k) => (k :->: v) -> [(k,v)]
-enumerateEnum t = [(k, f k) | k <- [0 ..] `weave` [-1, -2 ..]]
- where
-   f = untrie t
+-- enumerateEnum :: (Enum k, Num k, HasTrie k) => (k :->: v) -> [(k,v)]
+-- enumerateEnum t = [(k, f k) | k <- [0 ..] `weave` [-1, -2 ..]]
+--  where
+--    f = untrie t
 
 #define HasTrieIntegral(Type) \
 instance HasTrie Type where { \
   type Trie Type = IT.IntTrie; \
   trie   = (<$> IT.identity); \
   untrie = IT.apply; \
-  enumerate = enumerateEnum; \
 }
+
+--  enumerate = enumerateEnum;
+
 
 HasTrieIntegral(Int)
 HasTrieIntegral(Integer)

@@ -21,7 +21,10 @@ module FunctorCombo.Functor
   ) where
 
 
-import Control.Applicative (Applicative(..),Const(..))
+import Data.Monoid(Monoid(..))
+import Data.Foldable (Foldable(..))
+import Data.Traversable (Traversable(..))
+import Control.Applicative (Applicative(..),Const(..),liftA2)
 
 import Control.Compose (Id(..),unId,inId,inId2,(:.)(..),unO,inO,inO2,(~>))
 
@@ -69,7 +72,7 @@ eitherF _ q (InR ga) = q ga
 
 
 {--------------------------------------------------------------------
-    Functor and Applicative instances for generic constructors
+    Instances
 --------------------------------------------------------------------}
 
 instance Functor Void where
@@ -126,6 +129,14 @@ instance Functor Void where
 instance (Applicative f, Applicative g) => Applicative (f :*: g) where
   pure a = pure a :*: pure a
   (f :*: g) <*> (a :*: b) = (f <*> a) :*: (g <*> b)
+
+instance (Foldable f, Foldable g) => Foldable (f :*: g) where
+  -- fold (fa :*: ga) = fold fa `mappend` fold ga
+  foldMap p (fa :*: ga) = foldMap p fa `mappend` foldMap p ga
+
+instance (Traversable f, Traversable g) => Traversable (f :*: g) where
+  -- sequenceA (fha :*: gha) = liftA2 (:*:) (sequenceA fha) (sequenceA gha)
+  traverse p (fha :*: gha) = liftA2 (:*:) (traverse p fha) (traverse p gha)
 
 -- instance (Applicative f, Applicative g) => Applicative (f :+: g) where
 --   -- pure = ?? -- could use either 'InL . pure' or 'InR . pure'

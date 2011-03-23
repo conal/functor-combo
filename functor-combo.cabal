@@ -1,5 +1,5 @@
 Name:                functor-combo
-Version:             0.0.8
+Version:             0.1.0
 Cabal-Version:       >= 1.2
 Synopsis:            Functor combinators with tries & zippers
 Category:            Data
