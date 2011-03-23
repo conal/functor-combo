@@ -126,8 +126,10 @@ instance Traversable (Const b) where
 instance (Foldable f, Foldable g) => Foldable (f :+: g) where
   -- fold (InL fa) = fold fa
   -- fold (InR ga) = fold ga
-  foldMap p (InL fa) = foldMap p fa
-  foldMap p (InR ga) = foldMap p ga
+  fold = eitherF fold fold
+  -- foldMap p (InL fa) = foldMap p fa
+  -- foldMap p (InR ga) = foldMap p ga
+  foldMap p = eitherF (foldMap p) (foldMap p)
 
 instance (Traversable f, Traversable g) => Traversable (f :+: g) where
   -- sequenceA (InL fa) = InL <$> sequenceA fa
