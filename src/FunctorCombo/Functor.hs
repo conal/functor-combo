@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeOperators, EmptyDataDecls, StandaloneDeriving, DeriveFunctor #-}
 {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 ----------------------------------------------------------------------
 -- |
 -- Module      :  FunctorCombo.Functor
@@ -90,6 +91,13 @@ instance Functor Void where
 -- 
 -- TODO: replace explicit definition with deriving, when the compiler fix
 -- has been around for a while.
+
+instance Foldable (Const b) where
+  fold (Const _) = mempty
+
+instance Traversable (Const b) where
+  -- sequenceA (Const b) = pure (Const b)
+  traverse _ (Const b) = pure (Const b)
 
 -- instance Functor Id where
 --   fmap h (Id a) = Id (h a)
