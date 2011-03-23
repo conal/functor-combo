@@ -25,7 +25,7 @@ module FunctorCombo.Functor
 import Data.Monoid(Monoid(..))
 import Data.Foldable (Foldable(..))
 import Data.Traversable (Traversable(..))
-import Control.Applicative (Applicative(..),Const(..),liftA2,(<$>))
+import Control.Applicative (Applicative(..),Const(..),liftA2) -- (<$>)
 
 import Control.Compose (Id(..),unId,inId,inId2,(:.)(..),unO,inO,inO2,(~>))
 
@@ -134,8 +134,10 @@ instance (Foldable f, Foldable g) => Foldable (f :+: g) where
 instance (Traversable f, Traversable g) => Traversable (f :+: g) where
   -- sequenceA (InL fa) = InL <$> sequenceA fa
   -- sequenceA (InR ga) = InR <$> sequenceA ga
-  traverse p (InL fa) = InL <$> traverse p fa
-  traverse p (InR ga) = InR <$> traverse p ga
+  sequenceA = eitherF (fmap InL . sequenceA) (fmap InR . sequenceA)
+  -- traverse p (InL fa) = InL <$> traverse p fa
+  -- traverse p (InR ga) = InR <$> traverse p ga
+  traverse p = eitherF (fmap InL . traverse p) (fmap InR . traverse p)
 
 
 -- What about Applicative instances?  I think Void could implement (<*>)
