@@ -16,7 +16,7 @@
 module FunctorCombo.Functor
   (
     Const(..),Void,voidF,Unit,unit,Id(..),unId,inId,inId2,(:+:)(..),eitherF
-  , (:*:)(..),(:.)(..),unO,inO,inO2,(~>)
+  , (:*:)(..),fstF,sndF,(:.)(..),unO,inO,inO2,(~>)
   , Lift(..), (:*:!)(..), (:+:!)(..), eitherF'
   , pairF, unPairF, inProd, inProd2
   ) where
@@ -59,6 +59,14 @@ unit = Const ()
 
 -- | Product on unary type constructors
 data (f :*: g) a = f a :*: g a deriving (Show,Functor)
+
+-- | Like 'fst'
+fstF :: (f :*: g) a -> f a
+fstF (fa :*: _) = fa
+
+-- | Like 'snd'
+sndF :: (f :*: g) a -> g a
+sndF (_ :*: ga) = ga
 
 -- | Sum on unary type constructors
 data (f :+: g) a = InL (f a) | InR (g a) deriving (Show,Functor)
@@ -157,7 +165,11 @@ instance (Applicative f, Applicative g) => Applicative (f :*: g) where
 
 instance (Foldable f, Foldable g) => Foldable (f :*: g) where
   -- fold (fa :*: ga) = fold fa `mappend` fold ga
+  -- fold q = fold (fstF q) `mappend` fold (sndF q)
+  -- fold = (fold . fstF) `mappend` (fold . sndF) -- function monoid
   foldMap p (fa :*: ga) = foldMap p fa `mappend` foldMap p ga
+
+
 
 instance (Traversable f, Traversable g) => Traversable (f :*: g) where
   -- sequenceA (fha :*: gha) = liftA2 (:*:) (sequenceA fha) (sequenceA gha)
