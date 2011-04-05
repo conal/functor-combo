@@ -101,7 +101,8 @@ instance Functor Void where
 -- has been around for a while.
 
 instance Foldable (Const b) where
-  fold (Const _) = mempty
+  -- fold (Const _) = mempty
+  fold = const mempty
 
 instance Traversable (Const b) where
   -- sequenceA (Const b) = pure (Const b)
