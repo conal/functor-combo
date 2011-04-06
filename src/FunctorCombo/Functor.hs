@@ -174,7 +174,7 @@ joinP :: (Functor f, Functor g, Monad f, Monad g) =>
          (f :*: g) ((f :*: g) a) -> (f :*: g) a
 joinP m = join (fstF <$> fstF m) :*: join (sndF <$> sndF m)
 
--- joinP (ffga :*: gfga) = (fstF <$> ffga) :*: (sndF <$> gfga)
+-- joinP (ffga :*: gfga) = join (fstF <$> ffga) :*: join (sndF <$> gfga)
 
 
 
