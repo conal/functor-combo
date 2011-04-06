@@ -25,7 +25,8 @@ module FunctorCombo.Functor
 import Data.Monoid(Monoid(..))
 import Data.Foldable (Foldable(..))
 import Data.Traversable (Traversable(..))
-import Control.Applicative (Applicative(..),Const(..),liftA2) -- (<$>)
+import Control.Applicative (Applicative(..),Const(..),liftA2,(<$>))
+import Control.Monad (join)
 
 import Control.Compose (Id(..),unId,inId,inId2,(:.)(..),unO,inO,inO2,(~>))
 
@@ -164,12 +165,24 @@ instance (Applicative f, Applicative g) => Applicative (f :*: g) where
   pure a = pure a :*: pure a
   (f :*: g) <*> (a :*: b) = (f <*> a) :*: (g <*> b)
 
+instance (Functor f, Functor g, Monad f, Monad g) =>
+         Monad (f :*: g) where
+  return a = return a :*: return a
+  m >>= k = joinP (k <$> m)
+
+joinP :: (Functor f, Functor g, Monad f, Monad g) =>
+         (f :*: g) ((f :*: g) a) -> (f :*: g) a
+joinP m = join (fstF <$> fstF m) :*: join (sndF <$> sndF m)
+
+-- joinP (ffga :*: gfga) = (fstF <$> ffga) :*: (sndF <$> gfga)
+
+
+
 instance (Foldable f, Foldable g) => Foldable (f :*: g) where
   -- fold (fa :*: ga) = fold fa `mappend` fold ga
   -- fold q = fold (fstF q) `mappend` fold (sndF q)
   -- fold = (fold . fstF) `mappend` (fold . sndF) -- function monoid
   foldMap p (fa :*: ga) = foldMap p fa `mappend` foldMap p ga
-
 
 
 instance (Traversable f, Traversable g) => Traversable (f :*: g) where
