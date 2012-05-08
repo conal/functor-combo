@@ -19,6 +19,7 @@ module FunctorCombo.Functor
   , (:*:)(..),fstF,sndF,(:.)(..),unO,inO,inO2,(~>)
   , Lift(..), (:*:!)(..), (:+:!)(..), eitherF'
   , pairF, unPairF, inProd, inProd2
+  , Pair(..)
   ) where
 
 
@@ -264,3 +265,35 @@ data (f :+:! g) a = InL' !(f a) | InR' !(g a) deriving Functor
 eitherF' :: (f a -> c) -> (g a -> c) -> ((f :+:! g) a -> c)
 eitherF' p _ (InL' fa) = p fa
 eitherF' _ q (InR' ga) = q ga
+
+{--------------------------------------------------------------------
+    Pair functor. Just a convenience. Pair =~ Id :*: Id
+--------------------------------------------------------------------}
+
+-- | Uniform pairs
+data Pair a = a :# a
+
+-- Interpreting Pair a as Bool -> a or as Vec2 a, the instances follow
+-- inevitably from the principle of type class morphisms.
+
+instance Functor Pair where
+  fmap f (a :# b) = (f a :# f b)
+
+instance Applicative Pair where
+  pure a = (a :# a)
+  (f :# g) <*> (a :# b) = (f a :# g b)
+
+instance Monad Pair where
+  return = pure
+  (a :# b) >>= f = (c :# d)
+   where
+     (c :# _) = f a
+     (_ :# d) = f b
+
+instance Foldable Pair where
+  foldMap f (a :# b) = f a `mappend` f b
+  -- fold (a :# b) = a `mappend` b
+
+instance Traversable Pair where
+  traverse h (fa :# fb) = liftA2 (:#) (h fa) (h fb)
+  -- sequenceA (fa :# fb) = liftA2 (:#) fa fb

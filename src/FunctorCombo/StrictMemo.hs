@@ -6,7 +6,7 @@
 ----------------------------------------------------------------------
 -- |
 -- Module      :  FunctorCombo.MemoTrie
--- Copyright   :  (c) Conal Elliott 2010
+-- Copyright   :  (c) Conal Elliott 2010-2012
 -- License     :  BSD3
 -- 
 -- Maintainer  :  conal@conal.net
@@ -59,8 +59,6 @@ type k :->: v = Trie k v
 #define HF(Ty) HasTrie (Ty), Functor (Trie (Ty))
 
 #endif
-
-
 
 -- | Domain types with associated memo tries
 class HasTrieContext(k) => HasTrie k where
@@ -145,6 +143,8 @@ instance (HF(a), HasTrie b) => HasTrie (a , b) where
   trie   f = O (trie (trie . curry f))
   -- untrie (O tt) = uncurry (untrie . untrie tt)
   untrie (O tt) = uncurry (untrie (fmap untrie tt))
+  -- With the first form of untrie, I only need HasTrie a, not also
+  -- Functor (Trie a) in the case of FunctorSuperClass
 --   enumerate (O tt) =
 --     [ ((a,b),x) | (a,t) <- enumerate tt , (b,x) <- enumerate t ]
 
@@ -159,10 +159,14 @@ instance Context => HasTrie (Type) where {\
 
 --  enumerate = (result.fmap.first) (fromIso) enumerate;
 
+-- HasTrieIsomorph( (), Bool, Either () ()
+--                , bool (Right ()) (Left ())
+--                , either (\ () -> False) (\ () -> True))
 
-HasTrieIsomorph( (), Bool, Either () ()
-               , bool (Right ()) (Left ())
-               , either (\ () -> False) (\ () -> True))
+instance HasTrie Bool where
+  type Trie Bool = Pair
+  trie f = (f False :# f True)
+  untrie (f :# t) c = if c then t else f
 
 HasTrieIsomorph( (HF(a),HF(b), HasTrie c)
                , (a,b,c), ((a,b),c)
@@ -333,6 +337,15 @@ HasTrieIntegral(Integer)
 
 HasTrieIsomorph((HasTrie a, HasTrie (a :->: b)), a -> b, a :->: b, trie, untrie)
 
+-- -- Convenience Pair functor
+-- instance HasTrie a => HasTrie (Pair a) where
+--   type Trie (Pair a) = Trie a :. Trie a
+--   trie f = O (trie (\ a -> trie (\ b -> f (a :# b))))
+--   untrie (O tt) (a :# b) = untrie (untrie tt a) b
+
+HasTrieIsomorph((HF(a))
+               , Pair a, (a,a)
+               , \ (a :# a') -> (a,a'), \ (a,a') -> (a :# a'))
 
 {--------------------------------------------------------------------
     Misc
