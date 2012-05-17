@@ -120,7 +120,7 @@ memo3 = mup memo2
 instance HasTrie () where
   type Trie ()  = Id
   trie   f      = Id (f ())
-  untrie (Id v) = const v
+  untrie (Id v) = \ () -> v
 --   enumerate (Id a) = [((),a)]
 
 instance (HasTrie a, HasTrie b) => HasTrie (Either a b) where
@@ -136,7 +136,6 @@ weave :: [a] -> [a] -> [a]
 [] `weave` as = as
 as `weave` [] = as
 (a:as) `weave` bs = a : (bs `weave` as)
-
 
 instance (HF(a), HasTrie b) => HasTrie (a , b) where
   type Trie (a , b) = Trie a :. Trie b
