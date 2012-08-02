@@ -1,4 +1,7 @@
-{-# LANGUAGE TypeOperators, EmptyDataDecls, StandaloneDeriving, DeriveFunctor #-}
+{-# LANGUAGE TypeOperators, EmptyDataDecls, StandaloneDeriving #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE TypeFamilies #-}
+
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 ----------------------------------------------------------------------
@@ -19,18 +22,17 @@ module FunctorCombo.Functor
   , (:*:)(..),fstF,sndF,(:.)(..),unO,inO,inO2,(~>)
   , Lift(..), (:*:!)(..), (:+:!)(..), eitherF'
   , pairF, unPairF, inProd, inProd2
-  , Pair(..)
+  , EncodeF(..)
   ) where
 
 
-import Data.Monoid(Monoid(..))
+import Data.Monoid (Monoid(..))
 import Data.Foldable (Foldable(..))
 import Data.Traversable (Traversable(..))
 import Control.Applicative (Applicative(..),Const(..),liftA2,(<$>))
 import Control.Monad (join)
 
 import Control.Compose (Id(..),unId,inId,inId2,(:.)(..),unO,inO,inO2,(~>))
-
 
 -- infixl 9 :.
 infixl 7 :*:
@@ -102,13 +104,16 @@ instance Functor Void where
 -- TODO: replace explicit definition with deriving, when the compiler fix
 -- has been around for a while.
 
-instance Foldable (Const b) where
-  -- fold (Const _) = mempty
-  fold = const mempty
+deriving instance Foldable    (Const b)
+deriving instance Traversable (Const b)
 
-instance Traversable (Const b) where
-  -- sequenceA (Const b) = pure (Const b)
-  traverse _ (Const b) = pure (Const b)
+-- instance Foldable (Const b) where
+--   -- fold (Const _) = mempty
+--   foldMap _ (Const _) = mempty
+
+-- instance Traversable (Const b) where
+--   -- sequenceA (Const b) = pure (Const b)
+--   traverse _ (Const b) = pure (Const b)
 
 -- instance Functor Id where
 --   fmap h (Id a) = Id (h a)
@@ -267,33 +272,12 @@ eitherF' p _ (InL' fa) = p fa
 eitherF' _ q (InR' ga) = q ga
 
 {--------------------------------------------------------------------
-    Pair functor. Just a convenience. Pair =~ Id :*: Id
+    Encoding via standard functor combinators
 --------------------------------------------------------------------}
 
--- | Uniform pairs
-data Pair a = a :# a
+class EncodeF f where
+  type Enc f :: * -> *
+  encode :: f a -> Enc f a
+  decode :: Enc f a -> f a
 
--- Interpreting Pair a as Bool -> a or as Vec2 a, the instances follow
--- inevitably from the principle of type class morphisms.
-
-instance Functor Pair where
-  fmap f (a :# b) = (f a :# f b)
-
-instance Applicative Pair where
-  pure a = (a :# a)
-  (f :# g) <*> (a :# b) = (f a :# g b)
-
-instance Monad Pair where
-  return = pure
-  (a :# b) >>= f = (c :# d)
-   where
-     (c :# _) = f a
-     (_ :# d) = f b
-
-instance Foldable Pair where
-  foldMap f (a :# b) = f a `mappend` f b
-  -- fold (a :# b) = a `mappend` b
-
-instance Traversable Pair where
-  traverse h (fa :# fb) = liftA2 (:#) (h fa) (h fb)
-  -- sequenceA (fa :# fb) = liftA2 (:#) fa fb
+-- TODO: Very similar to the Regular class. Can they be reconciled?

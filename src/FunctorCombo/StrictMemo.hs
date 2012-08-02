@@ -34,6 +34,7 @@ import Control.Compose (result)  -- TypeCompose
 
 -- import FunctorCombo.Strict
 import FunctorCombo.Functor
+import FunctorCombo.Pair
 import FunctorCombo.Regular
 
 

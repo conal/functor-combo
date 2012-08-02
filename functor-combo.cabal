@@ -1,5 +1,5 @@
 Name:                functor-combo
-Version:             0.1.1
+Version:             0.2.0
 Cabal-Version:       >= 1.2
 Synopsis:            Functor combinators with tries & zippers
 Category:            Data
@@ -31,6 +31,8 @@ Library
   Exposed-Modules:     
                        FunctorCombo.Strict
                        FunctorCombo.Functor
+                       FunctorCombo.ParScan
+                       FunctorCombo.Pair
                        FunctorCombo.LubF
                        FunctorCombo.Derivative
                        FunctorCombo.Holey

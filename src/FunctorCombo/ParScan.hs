@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DeriveFunctor #-} -- PreScanO, SufScanO
+{-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-} -- TEMP
@@ -7,7 +8,7 @@
 
 ----------------------------------------------------------------------
 -- |
--- Module      :  ParScan
+-- Module      :  FunctorCombo.ParScan
 -- Copyright   :  (c) 2012 Tabula, Inc.
 -- 
 -- Maintainer  :  conal@tabula.com
@@ -17,13 +18,18 @@
 -- <http://conal.net/blog/posts/composable-parallel-scanning/>
 ----------------------------------------------------------------------
 
-module ParScan (Scan(..), PreScanO, SufScanO) where
+module FunctorCombo.ParScan
+  ( Scan(..), PreScanO, SufScanO
+  , prefixScanEnc, suffixScanEnc
+  , preScanTweak, sufScanTweak
+  , prefixSums, suffixSums
+  ) where
 
 -- TODO: explicit exports
 
 import Prelude hiding (zip,unzip)
 
-import Data.Monoid (Monoid(..))
+import Data.Monoid (Monoid(..),Sum(..))
 import Control.Applicative (Applicative(..),liftA2,(<$>))
 import Control.Arrow ((&&&),(***),first,second)
 import Data.Foldable
@@ -37,23 +43,8 @@ type SufScanO f a = (a, f a)
 -- | Parallel scans. `prefixScan` accumulates moving left-to-right, while
 -- `suffixScan` accumulates moving right-to-left.
 class Scan f where
-  prefixScan :: Monoid m => f m -> (f m, m)
-  suffixScan :: Monoid m => f m -> (m, f m)
-
-{--------------------------------------------------------------------
-    A simple example: pairs
---------------------------------------------------------------------}
-
--- To get a first sense of generalized scans, let's use see how to scan over a
--- pair functor.
-
-instance Scan Pair where
-  prefixScan (a :# b) = (mempty :# a, a `mappend` b)
-  suffixScan (a :# b) = (a `mappend` b, b :# mempty)
-
--- We don't really have to figure out how to define scans for every functor
--- separately. We can instead look at how functors are are composed out of their
--- essential building blocks.
+  prefixScan :: Monoid m => f m -> PreScanO f m
+  suffixScan :: Monoid m => f m -> SufScanO f m
 
 {--------------------------------------------------------------------
     Functor combinators
@@ -86,7 +77,6 @@ instance (Scan f, Scan g) => Scan (f :+: g) where
 -- Product scannning is a little trickier. Scan each of the two parts
 -- separately, and then combine the final (`fold`) part of one result with each
 -- of the non-final elements of the other.
-
 
 preScanTweak :: Functor f => (a -> b) -> PreScanO f a -> PreScanO f b
 preScanTweak h = fmap h *** h
@@ -184,3 +174,15 @@ instance (Scan g, Scan f, Functor f, Applicative g) => Scan (g :. f) where
              . unzip
              . fmap suffixScan
              . unO
+
+prefixScanEnc :: (EncodeF f, Scan (Enc f), Monoid m) => f m -> PreScanO f m
+prefixScanEnc = first  decode . prefixScan . encode
+
+suffixScanEnc :: (EncodeF f, Scan (Enc f), Monoid m) => f m -> SufScanO f m
+suffixScanEnc = second decode . suffixScan . encode
+
+prefixSums :: (Functor f, Scan f, Num a) => f a -> PreScanO f a
+prefixSums = preScanTweak getSum . prefixScan . fmap Sum
+
+suffixSums :: (Functor f, Scan f, Num a) => f a -> SufScanO f a
+suffixSums = sufScanTweak getSum . suffixScan . fmap Sum
