@@ -18,8 +18,10 @@
 
 module FunctorCombo.Functor
   (
-    Const(..),Void,voidF,Unit,unit,Id(..),unId,inId,inId2,(:+:)(..),eitherF
-  , (:*:)(..),fstF,sndF,(:.)(..),unO,inO,inO2,(~>)
+    Const(..),Void,voidF,Unit,unit,Id(..),unId,inId,inId2
+  , (:+:)(..),eitherF
+  , (:*:)(..),asProd,asPair,fstF,sndF
+  , (:.)(..),unO,inO,inO2,(~>),(<~)
   , Lift(..), (:*:!)(..), (:+:!)(..), eitherF'
   , pairF, unPairF, inProd, inProd2
   , EncodeF(..)
@@ -32,7 +34,7 @@ import Data.Traversable (Traversable(..))
 import Control.Applicative (Applicative(..),Const(..),liftA2,(<$>))
 import Control.Monad (join)
 
-import Control.Compose (Id(..),unId,inId,inId2,(:.)(..),unO,inO,inO2,(~>))
+import Control.Compose (Id(..),unId,inId,inId2,(:.)(..),unO,inO,inO2,(~>),(<~))
 
 -- infixl 9 :.
 infixl 7 :*:
@@ -63,6 +65,12 @@ unit = Const ()
 
 -- | Product on unary type constructors
 data (f :*: g) a = f a :*: g a deriving (Show,Functor)
+
+asPair :: (f :*: g) a -> (f a, g a)
+asPair (fa :*: ga) = (fa,ga)
+
+asProd :: (f a, g a) -> (f :*: g) a
+asProd (fa,ga) = (fa :*: ga)
 
 -- | Like 'fst'
 fstF :: (f :*: g) a -> f a
@@ -224,12 +232,12 @@ unPairF (fa :*: ga) = (fa , ga)
 -- Could also define curryF, uncurryF
 
 inProd :: ((f a , g a) -> (h b , i b)) -> ((f :*: g) a -> (h :*: i) b)
-inProd = unPairF ~> pairF
+inProd = pairF <~ unPairF
 
 
 inProd2 :: ((f a , g a) -> (h b , i b) -> (j c , k c))
         -> ((f :*: g) a -> (h :*: i) b -> (j :*: k) c)
-inProd2 = unPairF ~> inProd
+inProd2 = inProd <~ unPairF
 
 
 {--------------------------------------------------------------------

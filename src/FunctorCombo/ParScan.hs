@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveFunctor #-} -- PreScanO, SufScanO
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
 
@@ -94,13 +93,36 @@ sufScanTweak h = h *** fmap h
 --   data SufScanO' f a = a :< f a deriving Functor
 
 instance (Scan f, Scan g, Functor f, Functor g) => Scan (f :*: g) where
-  prefixScan (fa :*: ga) = (fa' :*: ga', ag)
-   where (fa',af) = prefixScan fa
-         (ga',ag) = preScanTweak (af `mappend`) (prefixScan ga)
-  
-  suffixScan (fa :*: ga) = (af, fa' :*: ga')
-   where (ag,ga') = suffixScan ga
-         (af,fa') = sufScanTweak (`mappend` ag) (suffixScan fa)
+
+--   prefixScan (fa :*: ga) = (fa' :*: ga', ag)
+--    where (fa',af) = prefixScan fa
+--          (ga',ag) = preScanTweak (af `mappend`) (prefixScan ga)
+
+  prefixScan = first asProd
+             . assocL
+             . second tweak
+             . assocR
+             . (prefixScan *** prefixScan)
+             . asPair
+   where
+     tweak (af,w) = preScanTweak (af `mappend`) w
+
+--   suffixScan (fa :*: ga) = (af, fa' :*: ga')
+--    where (ag,ga') = suffixScan ga
+--          (af,fa') = sufScanTweak (`mappend` ag) (suffixScan fa)
+
+  suffixScan = second asProd
+             . assocR
+             . first tweak
+             . assocL
+             . (suffixScan *** suffixScan)
+             . asPair
+   where
+     tweak (w,ag) = sufScanTweak (`mappend` ag) w
+
+
+-- Note that Functor f above is for suffixScan, and Functor g for prefixScan.
+-- If we split into two classes, we'd get a bit more generality.
 
 -- Finally, composition is the trickiest. The target signatures:
 -- 
