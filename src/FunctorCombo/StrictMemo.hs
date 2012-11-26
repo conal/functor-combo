@@ -18,7 +18,8 @@
 
 module FunctorCombo.StrictMemo
   (
-    HasTrie(..),(:->:),memo,memo2,memo3
+    HasTrie(..),(:->:),memo,memo2,memo3,idTrie
+  , onUntrie, onUntrie2
   ) where
 
 import Control.Arrow (first)
@@ -30,7 +31,7 @@ import Data.Tree
 import qualified Data.IntTrie as IT  -- data-inttrie
 import Data.Tree
 
-import Control.Compose (result)  -- TypeCompose
+import Control.Compose (result,(<~))  -- TypeCompose
 
 -- import FunctorCombo.Strict
 import FunctorCombo.Functor
@@ -451,3 +452,17 @@ instance Regular (Tree a) where
   type PF (Tree a) = Const a :*: []
   unwrap (Node a ts) = Const a :*: ts
   wrap (Const a :*: ts) = Node a ts
+
+{--------------------------------------------------------------------
+    Acting on function
+--------------------------------------------------------------------}
+
+onUntrie :: (HasTrie a, HasTrie b) =>
+            ((a  ->  a') -> (b  ->  b'))
+         -> ((a :->: a') -> (b :->: b'))
+onUntrie = trie <~ untrie
+
+onUntrie2  :: (HasTrie a, HasTrie b, HasTrie c) =>
+             ((a  ->  a') -> (b  ->  b') -> (c  ->  c'))
+          -> ((a :->: a') -> (b :->: b') -> (c :->: c'))
+onUntrie2 = onUntrie <~ untrie
