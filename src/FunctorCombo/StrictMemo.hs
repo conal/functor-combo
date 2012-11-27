@@ -49,7 +49,7 @@ infixr 0 :->:
 type k :->: v = Trie k v
 
 
--- #define FunctorSuperClass
+#define FunctorSuperClass
 
 #ifdef FunctorSuperClass
 
