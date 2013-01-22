@@ -1,11 +1,12 @@
 {-# LANGUAGE TypeOperators, TypeFamilies, UndecidableInstances, CPP
            , FlexibleContexts, DeriveFunctor, StandaloneDeriving
+           , GADTs
  #-}
 {-# OPTIONS_GHC -Wall -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-unused-imports #-}  -- temporary while testing
 ----------------------------------------------------------------------
 -- |
--- Module      :  FunctorCombo.MemoTrie
+-- Module      :  FunctorCombo.StrictMemo
 -- Copyright   :  (c) Conal Elliott 2010-2012
 -- License     :  BSD3
 -- 
@@ -18,13 +19,15 @@
 
 module FunctorCombo.StrictMemo
   (
-    HasTrie(..),(:->:),memo,memo2,memo3,idTrie
+    HasTrie(..),(:->:),(!),memo,memo2,memo3,idTrie
   , onUntrie, onUntrie2
+  , TrieTree(..)
   ) where
 
-import Control.Arrow (first)
-import Control.Applicative ((<$>))
+import Data.Functor ((<$>))
 import Data.Foldable (Foldable,toList)
+import Control.Applicative (Applicative(..),liftA2)
+import Control.Arrow (first)
 
 import Data.Tree
 
@@ -32,6 +35,8 @@ import qualified Data.IntTrie as IT  -- data-inttrie
 import Data.Tree
 
 import Control.Compose (result,(<~))  -- TypeCompose
+
+import TypeUnary.Vec (Z,S,Vec(..),IsNat(..),Nat(..))
 
 -- import FunctorCombo.Strict
 import FunctorCombo.Functor
@@ -72,6 +77,10 @@ class HasTrieContext(k) => HasTrie k where
     untrie :: (k :->: v) -> (k  ->  v)
 --     -- | List the trie elements.  Order of keys (@:: k@) is always the same.
 --     enumerate :: (k :->: v) -> [(k,v)]
+
+-- | Indexing. Synonym for 'untrie'.
+(!) :: HasTrie k => (k :->: v) -> k  ->  v
+(!) = untrie
 
 -- -- | Domain elements of a trie
 -- domain :: HasTrie a => [a]
@@ -466,3 +475,59 @@ onUntrie2  :: (HasTrie a, HasTrie b, HasTrie c) =>
              ((a  ->  a') -> (b  ->  b') -> (c  ->  c'))
           -> ((a :->: a') -> (b :->: b') -> (c :->: c'))
 onUntrie2 = onUntrie <~ untrie
+
+{--------------------------------------------------------------------
+    Vector tries
+--------------------------------------------------------------------}
+
+data TrieTree :: * -> * -> * -> * where
+  L :: a -> TrieTree Z k a
+  B :: (k :->: TrieTree n k a) -> TrieTree (S n) k a
+
+instance Functor (Trie k) => Functor (TrieTree n k) where
+  fmap f (L a ) = L (f a)
+  fmap f (B ts) = B ((fmap.fmap) f ts)
+
+instance (Applicative (Trie k), IsNat n) => Applicative (TrieTree n k) where
+  pure = pureV nat
+  (<*>) = apV nat
+
+apV :: Applicative (Trie k) => Nat n -> TrieTree n k (a -> b) -> TrieTree n k a -> TrieTree n k b
+apV Zero     (L f ) (L x ) = L (f x)
+apV (Succ n) (B fs) (B xs) = B (liftA2 (apV n) fs xs)
+apV _ _ _ = error "apV: Impossible, but GHC doesn't know it"
+
+-- joinV :: TrieTree n k (TrieTree n k a) -> TrieTree n k a
+-- joinV = ...
+
+-- TODO: Maybe redo these instances via the semantic instances.
+-- Define instance templates in StrictMemo.
+
+pureV :: Applicative (Trie k) => Nat n -> a -> TrieTree n k a
+pureV Zero     = L
+pureV (Succ n) = B . pure . pureV n
+
+instance (HasTrie k, Functor (Trie k), IsNat n) => HasTrie (Vec n k) where
+  type Trie (Vec n k) = TrieTree n k
+  untrie = untrieV nat
+  trie   = trieV   nat
+
+untrieV :: (HasTrie k) =>
+           Nat n -> (Vec n k :->: v) -> (Vec n k -> v)
+untrieV Zero     (L a ) ZVec      = a
+untrieV (Succ n) (B ts) (k :< ks) = untrieV n (untrie ts k) ks
+untrieV _ _ _ = error "untrieV: Impossible, but GHC doesn't know it"
+
+trieV :: HasTrie k =>
+         Nat n -> (Vec n k -> v) -> (Vec n k :->: v)
+trieV Zero     f = L (f ZVec)
+trieV (Succ _) f = B (unO (trie (f . uncurry (:<))))
+
+-- f :: Vec (S n) k -> v
+-- f . uncurry (:<) :: k :* Vec n k -> v
+-- trie (f . uncurry (:<)) :: k :* Vec n k :->: v
+--                         :: (Trie k :. Trie (Vec n k)) v
+--                         :: (Trie k :. TrieTree n k) v
+-- unO (trie (f . uncurry (:<))) :: k :->: TrieTree n k v
+-- B (unO (trie (f . uncurry (:<)))) :: TrieTree (S n) k v
+--                                   :: Vec (S n) k :->: v
