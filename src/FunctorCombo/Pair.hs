@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, DeriveDataTypeable #-}
 {-# LANGUAGE TypeOperators, TypeFamilies #-}
 {-# OPTIONS_GHC -Wall #-}
 
@@ -31,6 +31,8 @@ import Data.Functor ((<$>))
 import Data.Foldable (Foldable(..))
 import Data.Traversable (Traversable(..))
 import Control.Applicative (Applicative(..),liftA2)
+import Data.Typeable (Typeable)
+import Data.Data (Data)
 
 import FunctorCombo.Functor
 import FunctorCombo.ParScan
@@ -41,7 +43,7 @@ import FunctorCombo.ParScan
 
 infixl 1 :#
 -- | Uniform pairs
-data Pair a = a :# a deriving (Functor,Eq,Show)
+data Pair a = a :# a deriving (Functor,Eq,Show,Typeable,Data)
 
 -- Interpreting Pair a as Bool -> a or as Vec2 a, the instances follow
 -- inevitably from the principle of type class morphisms.

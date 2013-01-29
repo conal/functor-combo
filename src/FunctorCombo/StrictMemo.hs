@@ -2,8 +2,11 @@
            , FlexibleContexts, DeriveFunctor, StandaloneDeriving
            , GADTs
  #-}
-{-# OPTIONS_GHC -Wall -fno-warn-orphans #-}
-{-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-unused-imports #-}  -- temporary while testing
+
+{-# OPTIONS_GHC -Wall -fno-warn-orphans  #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds   #-}  -- TEMP
+-- {-# OPTIONS_GHC -fno-warn-unused-imports #-}  -- TEMP
+
 ----------------------------------------------------------------------
 -- |
 -- Module      :  FunctorCombo.StrictMemo
@@ -25,16 +28,17 @@ module FunctorCombo.StrictMemo
   ) where
 
 import Data.Functor ((<$>))
-import Data.Foldable (Foldable,toList)
+import Data.Foldable (Foldable(..),toList)
+import Data.Traversable (Traversable(..))
 import Control.Applicative (Applicative(..),liftA2)
-import Control.Arrow (first)
+-- import Control.Arrow (first)
 
-import Data.Tree
+-- import Data.Tree
 
 import qualified Data.IntTrie as IT  -- data-inttrie
 import Data.Tree
 
-import Control.Compose (result,(<~))  -- TypeCompose
+-- import Control.Compose (result,(<~))  -- TypeCompose
 
 import TypeUnary.Vec (Z,S,Vec(..),IsNat(..),Nat(..))
 
@@ -506,6 +510,15 @@ apV _ _ _ = error "apV: Impossible, but GHC doesn't know it"
 pureV :: Applicative (Trie k) => Nat n -> a -> TrieTree n k a
 pureV Zero     = L
 pureV (Succ n) = B . pure . pureV n
+
+instance Foldable (Trie k) => Foldable (TrieTree n k) where
+  foldMap f (L a)  = f a
+  foldMap f (B ts) = (foldMap.foldMap) f ts
+
+instance (Functor (Trie k), Foldable (Trie k), Traversable (Trie k)) =>
+         Traversable (TrieTree n k) where
+  traverse f (L a)  = L <$> f a
+  traverse f (B ts) = B <$> (traverse.traverse) f ts
 
 instance (HasTrie k, Functor (Trie k), IsNat n) => HasTrie (Vec n k) where
   type Trie (Vec n k) = TrieTree n k
