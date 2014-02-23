@@ -8,7 +8,7 @@
 ----------------------------------------------------------------------
 -- |
 -- Module      :  FunctorCombo.Pair
--- Copyright   :  (c) 2012 Tabula, Inc.
+-- Copyright   :  (c) 2012 Conal Elliott
 -- 
 -- Maintainer  :  conal@tabula.com
 -- Stability   :  experimental

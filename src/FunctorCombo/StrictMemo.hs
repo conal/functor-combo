@@ -488,6 +488,13 @@ data TrieTree :: * -> * -> * -> * where
   L :: a -> TrieTree Z k a
   B :: (k :->: TrieTree n k a) -> TrieTree (S n) k a
 
+-- deriving instance Show a => Show (TrieTree n k a)
+
+-- instance Show a => Show (T n a) where
+--   showsPrec p (L a)  = showsApp1 "L" p a
+--   showsPrec p (B uv) = showsApp1 "B" p uv
+
+
 instance Functor (Trie k) => Functor (TrieTree n k) where
   fmap f (L a ) = L (f a)
   fmap f (B ts) = B ((fmap.fmap) f ts)
