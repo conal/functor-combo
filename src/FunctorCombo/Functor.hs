@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeOperators, EmptyDataDecls, StandaloneDeriving #-}
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, CPP #-}
 
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -112,8 +112,10 @@ instance Functor Void where
 -- TODO: replace explicit definition with deriving, when the compiler fix
 -- has been around for a while.
 
+#if !MIN_VERSION_base(4,7,0)
 deriving instance Foldable    (Const b)
 deriving instance Traversable (Const b)
+#endif
 
 -- instance Foldable (Const b) where
 --   -- fold (Const _) = mempty
