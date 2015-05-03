@@ -3,7 +3,6 @@
 {-# LANGUAGE TypeFamilies, CPP #-}
 
 {-# OPTIONS_GHC -Wall #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 ----------------------------------------------------------------------
 -- |
 -- Module      :  FunctorCombo.Functor
