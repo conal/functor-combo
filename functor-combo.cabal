@@ -22,7 +22,13 @@ source-repository head
 Library
   hs-Source-Dirs:      src
   Extensions:
-  Build-Depends:       base<5, TypeCompose >= 0.9.4, containers, data-inttrie, lub, type-unary
+  Build-Depends:       base<5
+                     , base-orphans
+                     , containers
+                     , data-inttrie
+                     , lub
+                     , TypeCompose >= 0.9.4
+                     , type-unary
   Exposed-Modules:     
                        FunctorCombo.Strict
                        FunctorCombo.Functor
