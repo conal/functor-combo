@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies, TypeOperators, TupleSections #-}
+{-# LANGUAGE EmptyCase #-}
 {-# OPTIONS_GHC -Wall #-}
 ----------------------------------------------------------------------
 -- |
@@ -37,6 +38,10 @@ class Functor f => Holey f where
   extract :: f a -> f (Loc f a)         -- ^ All extractions
 
 -- The Functor constraint simplifies several signatures below.
+
+instance Holey Void where
+  fillC v _ = case v of
+  extract v = case v of
 
 instance Holey (Const z) where
   fillC = voidF
