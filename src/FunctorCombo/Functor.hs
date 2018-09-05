@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeOperators, EmptyDataDecls, StandaloneDeriving #-}
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE TypeFamilies, CPP #-}
+{-# LANGUAGE EmptyCase #-}
 
 {-# OPTIONS_GHC -Wall #-}
 ----------------------------------------------------------------------
