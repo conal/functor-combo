@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeOperators, EmptyDataDecls, StandaloneDeriving #-}
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# LANGUAGE TypeFamilies, CPP #-}
+{-# LANGUAGE EmptyCase #-}
 
 {-# OPTIONS_GHC -Wall #-}
 ----------------------------------------------------------------------
@@ -49,7 +50,7 @@ infixl 6 :+:
 data Void a
 
 voidF :: Void a -> b
-voidF = error "voidF: no value of type Void"
+voidF x = case x of
 
 
 -- | Unit type constructor (one inhabitant)
@@ -97,7 +98,7 @@ eitherF _ q (InR ga) = q ga
 --------------------------------------------------------------------}
 
 instance Functor Void where
-  fmap _ = error "Void fmap: no void value"  -- so ghc won't complain
+  fmap _ v = case v of
 
 -- deriving instance Functor Void
 -- 

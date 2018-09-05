@@ -23,6 +23,8 @@ import FunctorCombo.Functor
 -- | A derivative, i.e., a one-hole context for a container f (probably a functor).
 type family Der (f :: (* -> *)) :: (* -> *)
 
+type instance Der Void = Void
+
 type instance Der (Const a) = Void
 
 type instance Der Id = Unit

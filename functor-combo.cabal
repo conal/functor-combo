@@ -24,6 +24,7 @@ Library
   Extensions:
   Build-Depends:       base<5
                      , base-orphans
+                     , bifunctors >= 5.5.3
                      , containers
                      , data-inttrie
                      , lub
@@ -38,6 +39,7 @@ Library
                        FunctorCombo.Derivative
                        FunctorCombo.Holey
                        FunctorCombo.DHoley
+                       FunctorCombo.THoles
                        FunctorCombo.Regular
                        FunctorCombo.ZipperFix
                        FunctorCombo.ZipperReg
